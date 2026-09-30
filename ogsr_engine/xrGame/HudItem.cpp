@@ -322,7 +322,22 @@ void CHudItem::UpdateCL()
         }
     }
 
-    AllowHudBobbing((psActorFlags.test(AF_WEAPON_BOBBING) && allow_bobbing) || (g_actor && g_actor->PsyAuraAffect));
+    // NLC: with g_weapon_bobbing_ads_only, bob only while aiming so the regular walk/run HUD animations
+    // (disabled while bobbing is allowed, see AnmIdleMovingAllowed) keep playing when not aiming.
+    const bool bobbing_ads_ok = !psActorFlags.test(AF_WEAPON_BOBBING_ADS_ONLY) || (g_actor && g_actor->IsZoomAimingMode());
+    const bool bobbing_was_allowed = HudBobbingAllowed();
+    AllowHudBobbing((psActorFlags.test(AF_WEAPON_BOBBING) && allow_bobbing && bobbing_ads_ok) || (g_actor && g_actor->PsyAuraAffect));
+
+    // NLC: leaving ADS picks the idle animation (OnZoomOut) while bobbing is still allowed, so a moving actor
+    // got plain idle and nothing re-selected it until the movement changed. Re-select once bobbing stops.
+    if (bobbing_was_allowed && !HudBobbingAllowed() && GetState() == eIdle && !m_bStopAtEndAnimIsRunning)
+    {
+        if (const auto* pActor = smart_cast<CActor*>(object().H_Parent()); pActor && (pActor->get_state() & mcAnyMove))
+        {
+            PlayAnimIdle();
+            ResetSubStateTime();
+        }
+    }
 
     TimeLockAnimation();
 }
@@ -1245,6 +1260,12 @@ CHudItem::CWeaponBobbing::CWeaponBobbing(CHudItem* parent) : parent_hud_item(par
 
 void CHudItem::CWeaponBobbing::CheckState()
 {
+    // NLC: Update() only runs while bobbing is allowed (ADS-only mode pauses it between aims);
+    // restart the fade-in instead of resuming with a stale full amplitude.
+    if (Device.dwFrame > m_dwLastUpdateFrame + 1)
+        fReminderFactor = 0.f;
+    m_dwLastUpdateFrame = Device.dwFrame;
+
     dwMState = Actor()->get_state();
     is_limping = Actor()->conditions().IsLimping();
     m_bZoomMode = Actor()->IsZoomAimingMode();

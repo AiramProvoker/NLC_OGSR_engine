@@ -1557,6 +1557,35 @@ public:
     }
 };
 
+// NLC: one 3-way switch for the menu over g_weapon_bobbing + g_weapon_bobbing_ads_only (those stay the storage)
+static u32 weapon_bobbing_mode{};
+constexpr xr_token weapon_bobbing_mode_token[]{{"st_opt_bobbing_off", 0}, {"st_opt_bobbing_always", 1}, {"st_opt_bobbing_aim", 2}, {}};
+
+class CCC_WeaponBobbingMode : public CCC_Token
+{
+public:
+    CCC_WeaponBobbingMode(LPCSTR N) : CCC_Token(N, &weapon_bobbing_mode, weapon_bobbing_mode_token) {}
+
+    void Execute(LPCSTR args) override
+    {
+        SyncFromFlags();
+        CCC_Token::Execute(args);
+        psActorFlags.set(AF_WEAPON_BOBBING, weapon_bobbing_mode != 0);
+        psActorFlags.set(AF_WEAPON_BOBBING_ADS_ONLY, weapon_bobbing_mode == 2);
+    }
+    void Status(TStatus& S) override
+    {
+        SyncFromFlags();
+        CCC_Token::Status(S);
+    }
+
+private:
+    static void SyncFromFlags()
+    {
+        weapon_bobbing_mode = !psActorFlags.test(AF_WEAPON_BOBBING) ? 0 : (psActorFlags.test(AF_WEAPON_BOBBING_ADS_ONLY) ? 2 : 1);
+    }
+};
+
 void CCC_RegisterCommands()
 {
     fl_hook::register_console_commands();
@@ -1743,6 +1772,8 @@ void CCC_RegisterCommands()
     CMD3(CCC_Mask, "g_effects_on_demorecord", &psActorFlags, AF_EFFECTS_ON_DEMORECORD);
     CMD3(CCC_Mask, "g_lock_reload", &psActorFlags, AF_LOCK_RELOAD);
     CMD3(CCC_Mask, "g_weapon_bobbing", &psActorFlags, AF_WEAPON_BOBBING);
+    CMD3(CCC_Mask, "g_weapon_bobbing_ads_only", &psActorFlags, AF_WEAPON_BOBBING_ADS_ONLY); // NLC
+    CMD1(CCC_WeaponBobbingMode, "g_weapon_bobbing_mode"); // NLC
 
     CMD4(CCC_Integer, "g_cop_death_anim", &g_bCopDeathAnim, 0, 1);
 

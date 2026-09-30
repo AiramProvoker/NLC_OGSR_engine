@@ -242,6 +242,7 @@ public:
 
         u32 dwMState;
         float fReminderFactor;
+        u32 m_dwLastUpdateFrame{}; // NLC: detects a pause in Update() (ADS-only bobbing)
         bool is_limping;
         bool m_bZoomMode;
 
