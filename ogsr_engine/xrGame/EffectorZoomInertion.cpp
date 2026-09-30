@@ -122,7 +122,16 @@ BOOL CEffectorZoomInertion::ProcessCam(SCamEffectorInfo& info)
     if (m_dwTimePassed == 0)
     {
         m_vLastPoint.set(m_vCurrentPoint);
-        CalcNextPoint();
+        // NLC: with switch_zoom_osc(true) the script owns m_vTargetPoint (wpn_params.scope_wobble
+        // sets it and resets time_passed); do not replace it with a random dispersion point.
+        if (!external_zoom_osc)
+            CalcNextPoint();
+    }
+    else if (external_zoom_osc)
+    {
+        // NLC: never re-randomise a script-owned target; hold it until the script sets the next one.
+        if (m_dwTimePassed > m_dwDeltaTime)
+            m_dwTimePassed = m_dwDeltaTime;
     }
     else
     {
