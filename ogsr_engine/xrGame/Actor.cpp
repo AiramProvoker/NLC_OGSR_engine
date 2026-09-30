@@ -78,7 +78,8 @@ static float IReceived = 0;
 static float ICoincidenced = 0;
 
 Flags32 psActorFlags{AF_KEYPRESS_ON_START | AF_CAM_COLLISION | AF_CAM_COLLISION_COP | /*AF_AI_VOLUMETRIC_LIGHTS | AF_DOF_ZOOM | AF_DOF_RELOAD |*/ AF_3D_PDA | AF_ALWAYSRUN |
-                     AF_FIRST_PERSON_DEATH | AF_MUSIC_TRACKS | AF_WEAPON_BOBBING};
+                     AF_FIRST_PERSON_DEATH | AF_MUSIC_TRACKS | AF_WEAPON_BOBBING | AF_WEAPON_BOBBING_ADS_ONLY |
+                     AF_3D_SCOPES | AF_SHOW_DYN_DESC_WND}; // NLC: 3D scopes and the inventory info popup on by default
 
 static bool updated;
 
