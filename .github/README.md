@@ -3,7 +3,8 @@
 Engine fork for **NLC Improved (HE)**: [OGSR Engine](https://github.com/OGSR/OGSR-Engine)
 (Shadow of Chernobyl) plus the NLC changes. This repository is the only source of
 truth for the NLC engine. Do not edit or build copies elsewhere (for example the old
-snapshot under `C:\Games\NLC_OGSR_HE\engine` or the `engine/` folder of the mod repo).
+snapshot under `C:\Games\NLC_OGSR_HE\engine`). The mod repo's `engine/` folder is a
+read-only mirror of this repository, updated with each release.
 
 - Current build: see [`CHANGELOG_NLC.md`](../CHANGELOG_NLC.md) (top entry).
 - Upstream README: <https://github.com/OGSR/OGSR-Engine>.
