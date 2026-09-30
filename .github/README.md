@@ -79,7 +79,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File nlc_tools\build_release.ps1 
 5. GitHub Release for the tag with the exe and PDB from `nlc_tools\builds\...`:
    `gh release create nlc-<ver> <exe> <pdb> --title nlc-<ver> --notes-file <notes>`.
    PDBs (about 200 MB) never go into git; the mod repo only tracks the exe.
-6. In the mod repo: commit the exe in `bin_x64\` and update `engine/ENGINE_VERSION.md`.
+6. In the mod repo, in one commit: the exe in `bin_x64\`, the mirror update of `engine/`
+   (replace its contents with `git archive <tag> | tar -x -C engine`) and
+   `engine/ENGINE_VERSION.md`. Never edit engine source in the mod repo.
 
 ## Upgrading upstream OGSR
 
