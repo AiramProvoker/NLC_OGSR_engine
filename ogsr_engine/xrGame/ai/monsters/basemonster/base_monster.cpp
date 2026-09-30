@@ -1004,3 +1004,25 @@ float CBaseMonster::get_screen_space_coverage_diagonal()
     float const average_diagonal = _sqrt(width * height);
     return average_diagonal;
 }
+
+void CBaseMonster::enable_aura(EAuraType aura_type, bool enable)
+{
+    switch (aura_type)
+    {
+    case eAuraTypeBase: m_base_aura.set_enabled(enable); break;
+    case eAuraTypePsy: m_psy_aura.set_enabled(enable); break;
+    case eAuraTypeFire: m_fire_aura.set_enabled(enable); break;
+    default: m_radiation_aura.set_enabled(enable); break;
+    }
+}
+
+bool CBaseMonster::is_aura_enabled(EAuraType aura_type)
+{
+    switch (aura_type)
+    {
+    case eAuraTypeBase: return m_base_aura.is_enabled();
+    case eAuraTypePsy: return m_psy_aura.is_enabled();
+    case eAuraTypeFire: return m_fire_aura.is_enabled();
+    default: return m_radiation_aura.is_enabled();
+    }
+}

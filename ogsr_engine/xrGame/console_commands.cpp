@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "fl_hook.h"
 #include "..\xr_3da\XR_IOConsole.h"
 #include "..\xr_3da\xr_ioc_cmd.h"
 #include "../xr_3da/customhud.h"
@@ -988,6 +989,34 @@ public:
 };
 //#endif // MASTER_GOLD
 
+class CCC_ScriptCommand : public IConsole_Command
+{
+public:
+    CCC_ScriptCommand(LPCSTR N) : IConsole_Command(N) {}
+
+    void Execute(LPCSTR args)
+    {
+        if (!xr_strlen(args))
+        {
+            Log("! Empty string!");
+            return;
+        }
+
+        shared_str script_name = "console command";
+        string4096 S;
+        xr_sprintf(S, "%s\n", args);
+
+        lua_State* L = ai().script_engine().lua();
+        int err = luaL_loadbuffer(L, S, xr_strlen(S), "@console_command");
+        if (!err)
+            err = lua_pcall(L, 0, LUA_MULTRET, 0);
+        if (err)
+            CScriptEngine::print_output(ai().script_engine().lua(), script_name.c_str(), err);
+    }
+};
+
+float m_exo_snd_vol = 2.f;
+
 class CCC_SpawnToInventory : public IConsole_Command
 {
 public:
@@ -1463,6 +1492,8 @@ public:
 
 void CCC_RegisterCommands()
 {
+    fl_hook::register_console_commands();
+
     CMD1(CCC_MemStats, "stat_memory");
     CMD1(CCC_UI_Reload, "ui_reload");
 
@@ -1505,6 +1536,7 @@ void CCC_RegisterCommands()
     CMD3(CCC_Mask, "hud_crosshair", &psHUD_Flags, HUD_CROSSHAIR);
     CMD3(CCC_Mask, "hud_crosshair_dist", &psHUD_Flags, HUD_CROSSHAIR_DIST);
     CMD3(CCC_Mask, "hud_info_overhead", &psHUD_Flags, HUD_INFO_OVERHEAD);
+    CMD3(CCC_Mask, "hud_show_status_icons", &psHUD_Flags, HUD_SHOW_STATUS_ICONS);
 
     if (IS_OGSR_GA)
         psHUD_FOV_def = 0.65f;
@@ -1608,6 +1640,7 @@ void CCC_RegisterCommands()
     CMD1(CCC_JumpToLevel, "jump_to_level");
     CMD1(CCC_Spawn, "g_spawn");
     CMD1(CCC_SpawnToInventory, "g_spawn_to_inventory");
+    CMD1(CCC_ScriptCommand, "g_loadstring");
     CMD3(CCC_Mask, "g_god", &psActorFlags, AF_GODMODE);
     CMD3(CCC_Mask, "g_unlimitedammo", &psActorFlags, AF_UNLIMITEDAMMO);
     CMD3(CCC_Mask, "g_ammunition_on_belt", &psActorFlags, AF_AMMO_ON_BELT);
@@ -1623,6 +1656,9 @@ void CCC_RegisterCommands()
     CMD3(CCC_Mask, "g_3d_pda", &psActorFlags, AF_3D_PDA);
 
     CMD3(CCC_Mask, "g_first_person_death", &psActorFlags, AF_FIRST_PERSON_DEATH);
+    CMD3(CCC_Mask, "g_show_dyn_desc_wnd", &psActorFlags, AF_SHOW_DYN_DESC_WND);
+    CMD3(CCC_Mask, "g_hide_untradable_items", &psActorFlags, AF_HIDE_UNTRADABLE_ITEMS);
+    CMD4(CCC_Float, "g_exo_snd_vol", &m_exo_snd_vol, 0.f, 2.f);
 
     CMD1(CCC_TimeFactor, "time_factor")
     CMD1(CCC_SetWeather, "set_weather");

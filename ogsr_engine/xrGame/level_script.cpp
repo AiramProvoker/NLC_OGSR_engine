@@ -604,11 +604,11 @@ void set_snd_volume(float v)
     clamp(psSoundVFactor, 0.0f, 1.0f);
 }
 #include "actor_statistic_mgr.h"
-void add_actor_points(LPCSTR sect, LPCSTR detail_key, int cnt, int pts) { return Actor()->StatisticMgr().AddPoints(sect, detail_key, cnt, pts); }
+void add_actor_points(LPCSTR sect, LPCSTR detail_key, int cnt, float pts) { return Actor()->StatisticMgr().AddPoints(sect, detail_key, cnt, pts); }
 
 void add_actor_points_str(LPCSTR sect, LPCSTR detail_key, LPCSTR str_value) { return Actor()->StatisticMgr().AddPoints(sect, detail_key, str_value); }
 
-int get_actor_points(LPCSTR sect) { return Actor()->StatisticMgr().GetSectionPoints(sect); }
+float get_actor_points(LPCSTR sect) { return Actor()->StatisticMgr().GetSectionPoints(sect); }
 
 void remove_actor_points(LPCSTR sect, LPCSTR detail_key) { Actor()->StatisticMgr().RemovePoints(sect, detail_key); }
 extern int get_actor_ranking();
@@ -922,6 +922,31 @@ void iterate_nearest(const Fvector& pos, float radius, luabind::functor<bool> fu
     }
 }
 
+void iterate_level_objects(luabind::functor<bool> functor)
+{
+    const u32 cnt = Level().Objects.o_count();
+    for (u32 i = 0; i < cnt; ++i)
+    {
+        CGameObject* obj = smart_cast<CGameObject*>(Level().Objects.o_get_by_iterator(i));
+        if (!obj)
+            continue;
+        if (functor(obj->lua_game_object()))
+            break;
+    }
+}
+
+void map_iterate_spots(const luabind::functor<void>& funct)
+{
+    for (auto& it : Level().MapManager().Locations())
+    {
+        CMapLocation* location = it.location;
+        const u16 id = location->ObjectID();
+        LPCSTR type = location->GetType();
+        LPCSTR hint = location->GetHint();
+        funct(location->LevelName().c_str(), hint, type, id);
+    }
+}
+
 float is_ray_intersect_sphere(Fvector pos, Fvector dir, Fvector C, float R)
 {
     Fsphere sphere;
@@ -987,6 +1012,19 @@ static void shader_get_custom_param(const char* key, float& x, float& y, float& 
 }
 
 
+extern bool g_block_change_level;
+extern float min_lumscale_amb;
+
+void block_change_level(bool b) { g_block_change_level = b; }
+
+void set_min_lumscale_amb(float v) { min_lumscale_amb = v; }
+
+void update_belt_slots_count()
+{
+    if (auto pGameSP = smart_cast<CUIGameSP*>(HUD().GetUI()->UIGame()))
+        pGameSP->InventoryMenu->UpdateOutfit();
+}
+
 void CLevel::script_register(lua_State* L)
 {
     module(L)[(class_<CEnvDescriptor>("CEnvDescriptor")
@@ -997,6 +1035,11 @@ void CLevel::script_register(lua_State* L)
                   .def_readwrite("wind_velocity", &CEnvDescriptor::wind_velocity)
                   .def_readwrite("wind_direction", &CEnvDescriptor::wind_direction)
                   .def_readwrite("m_fSunShaftsIntensity", &CEnvDescriptor::m_fSunShaftsIntensity)
+                  .def_readonly("thunderbolt_duration", &CEnvDescriptor::bolt_duration)
+                  .def_readonly("thunderbolt_period", &CEnvDescriptor::bolt_period)
+                  .def_readonly("sun_color", &CEnvDescriptor::sun_color)
+                  .property("sky_texture", [](CEnvDescriptor* self) { return self->sky_texture_name.c_str(); })
+                  .property("sky_texture_env", [](CEnvDescriptor* self) { return self->sky_texture_env_name.c_str(); })
                   .property("m_identifier", [](CEnvDescriptor* self) { return self->m_identifier.c_str(); })
                   .def("set_env_ambient", &CEnvDescriptor::setEnvAmbient),
               class_<CEnvironment>("CEnvironment")
@@ -1087,7 +1130,7 @@ void CLevel::script_register(lua_State* L)
 
             def("present", is_level_present),
 
-            def("disable_input", disable_input), def("enable_input", enable_input), 
+            def("disable_input", disable_input), def("enable_input", enable_input), def("block_change_level", block_change_level), 
 
             def("only_allow_movekeys", block_all_except_movement), def("only_movekeys_allowed", only_movement_allowed),
 
@@ -1114,7 +1157,7 @@ void CLevel::script_register(lua_State* L)
 
             def("get_inventory_wnd", &GetInventoryWindow), def("get_talk_wnd", &GetTalkWindow), def("get_trade_wnd", &GetTradeWindow), def("get_pda_wnd", &GetPdaWindow),
             def("get_car_body_wnd", &GetCarBodyWindow), def("get_second_talker", &GetSecondTalker), def("get_car_body_target", &GetCarBodyTarget),
-            def("get_change_level_wnd", &GetUIChangeLevelWnd),
+            def("get_change_level_wnd", &GetUIChangeLevelWnd), def("update_belt_slots_count", update_belt_slots_count),
 
             def("ray_query", &PerformRayQuery),
 
@@ -1128,12 +1171,12 @@ void CLevel::script_register(lua_State* L)
             def("send_event_key_press", &send_event_key_press), def("send_event_key_release", &send_event_key_release), def("send_event_key_hold", &send_event_key_hold),
             def("send_event_mouse_wheel", &send_event_mouse_wheel),
 
-            def("iterate_nearest", &iterate_nearest),
+            def("iterate_nearest", &iterate_nearest), def("iterate_level_objects", &iterate_level_objects), def("map_iterate_spots", &map_iterate_spots),
 
             def("change_level", &change_level), def("set_cam_inert", &set_cam_inert), def("set_monster_relation", &set_monster_relation), def("patrol_path_add", &patrol_path_add),
             def("patrol_path_remove", &patrol_path_remove), def("valid_vertex_id", &valid_vertex_id), def("vertex_count", &vertex_count), def("disable_vertex", &disable_vertex),
             def("enable_vertex", &enable_vertex), def("is_accessible_vertex_id", &is_accessible_vertex_id), def("iterate_vertices_inside", &iterate_vertices_inside),
-            def("iterate_vertices_border", &iterate_vertices_border), def("get_character_community_team", &get_character_community_team),
+            def("iterate_vertices_border", &iterate_vertices_border), def("get_character_community_team", &get_character_community_team), def("set_min_lumscale_amb", set_min_lumscale_amb),
 
             def("get_effector_bobbing", &get_effector_bobbing), def("is_ray_intersect_sphere", &is_ray_intersect_sphere),
 

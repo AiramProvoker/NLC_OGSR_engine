@@ -198,6 +198,7 @@ float ps_r2_sun_depth_near_scale = 1.0000f; // 1.00001f
 float ps_r2_sun_lumscale = 1.0f; // 1.0f
 float ps_r2_sun_lumscale_hemi = 1.0f; // 1.0f
 float ps_r2_sun_lumscale_amb = 1.0f;
+float min_lumscale_amb = 0.001f;
 
 float ps_r2_dhemi_sky_scale = 0.08f; // 1.5f
 float ps_r2_dhemi_light_scale = 0.2f;

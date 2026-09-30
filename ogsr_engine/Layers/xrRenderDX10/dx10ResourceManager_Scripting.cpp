@@ -81,6 +81,11 @@ public:
         C->SH->flags.iScopeLense = E;
         return *this;
     }
+    adopt_compiler& _o_scope_pass(bool E)
+    {
+        C->SH->flags.iScopePass = E;
+        return *this;
+    }
     adopt_compiler& _passCS(LPCSTR cs)
     {
         TryEndPass();
@@ -540,6 +545,7 @@ void CResourceManager::LS_Load()
                      .def("blend", &adopt_compiler::_blend, return_reference_to<1>())
                      .def("aref", &adopt_compiler::_aref, return_reference_to<1>())
                      .def("scopelense", &adopt_compiler::_o_scopelense, return_reference_to<1>())
+                     .def("scope_pass", &adopt_compiler::_o_scope_pass, return_reference_to<1>())
 
                      //	For compatibility only
                      .def("dx10color_write_enable", &adopt_compiler::_dx10color_write_enable, return_reference_to<1>())

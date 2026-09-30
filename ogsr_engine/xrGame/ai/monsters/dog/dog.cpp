@@ -44,6 +44,7 @@ void CAI_Dog::Load(LPCSTR section)
     inherited::Load(section);
 
     m_anim_factor = (pSettings->line_exist(section, "anim_factor")) ? pSettings->r_u32(section, "anim_factor") : 50;
+    allow_jump = !!READ_IF_EXISTS(pSettings, r_bool, section, "allow_jump", true);
     m_corpse_use_timeout = (pSettings->line_exist(section, "corpse_use_timeout")) ? 1000 * pSettings->r_u32(section, "corpse_use_timeout") : 5000;
     m_min_sleep_time = (pSettings->line_exist(section, "min_sleep_time")) ? 1000 * pSettings->r_u32(section, "min_sleep_time") : 5000;
     m_min_life_time = (pSettings->line_exist(section, "min_life_time")) ? 1000 * pSettings->r_u32(section, "min_life_time") : 10000;
@@ -265,6 +266,9 @@ bool CAI_Dog::check_start_conditions(ControlCom::EControlType type)
 {
     if (type == ControlCom::eControlJump)
     {
+        if (!allow_jump)
+            return false;
+
         // Lain: if leader or enemy is higher - can jump
         if (const CEntityAlive* enemy = EnemyMan.get_enemy())
             if (can_use_agressive_jump(enemy))

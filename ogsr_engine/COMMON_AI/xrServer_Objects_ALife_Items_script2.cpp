@@ -17,6 +17,8 @@ void CSE_ALifeItemPDA::script_register(lua_State* L) { module(L)[luabind_class_i
 
 void CSE_ALifeItemDocument::script_register(lua_State* L) { module(L)[luabind_class_item1(CSE_ALifeItemDocument, "cse_alife_item_document", CSE_ALifeItem)]; }
 
+void CSE_ALifeItemEatable::script_register(lua_State* L) { module(L)[luabind_class_item1(CSE_ALifeItemEatable, "cse_alife_item_eatable", CSE_ALifeItem)]; }
+
 void CSE_ALifeItemGrenade::script_register(lua_State* L) { module(L)[luabind_class_item1(CSE_ALifeItemGrenade, "cse_alife_item_grenade", CSE_ALifeItem)]; }
 
 void CSE_ALifeItemExplosive::script_register(lua_State* L) { module(L)[luabind_class_item1(CSE_ALifeItemExplosive, "cse_alife_item_explosive", CSE_ALifeItem)]; }

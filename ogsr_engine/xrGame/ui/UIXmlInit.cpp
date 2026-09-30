@@ -537,6 +537,9 @@ bool CUIXmlInit::InitDragDropListEx(CUIXml& xml_doc, const char* path, int index
     tmp = xml_doc.ReadAttribInt(path, index, "highlight_all_cells", 0);
     pWnd->SetHighlightAllCells(tmp != 0);
 
+    tmp = xml_doc.ReadAttribInt(path, index, "show_grid", 1);
+    pWnd->SetShowGrid(tmp != 0);
+
     pWnd->back_color = GetColor(xml_doc, path, index, 0xFFFFFFFF);
 
     if (xr_strlen(path))

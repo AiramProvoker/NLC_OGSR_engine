@@ -75,6 +75,7 @@ public:
 
 protected:
     void UpdateLists();
+    bool AllowShowInCarBody(CInventoryItem* item, bool our);
 
     void ActivatePropertiesBox();
     void EatItem();

@@ -193,7 +193,20 @@ void CALifeMonsterDetailPathManager::follow_path(const ALife::_TIME_ID& time_del
         setup_current_speed();
         float update_distance = (last_time_delta / ai().alife().time_manager().normal_time_factor()) * speed();
 
-        float distance_between = ai().game_graph().distance(object().m_tGraphID, (GameGraph::_GRAPH_ID)m_path[m_path.size() - 2]);
+        const GameGraph::_GRAPH_ID next_vertex = (GameGraph::_GRAPH_ID)m_path[m_path.size() - 2];
+        float distance_between = -1.f;
+        {
+            CGameGraph::const_iterator I, E;
+            ai().game_graph().begin(object().m_tGraphID, I, E);
+            for (; I != E; ++I)
+            {
+                if (ai().game_graph().value(object().m_tGraphID, I) == next_vertex)
+                {
+                    distance_between = ai().game_graph().edge_weight(I);
+                    break;
+                }
+            }
+        }
         if (distance_between == -1) // нет пути, сбрасываем
         {
             m_path.clear();

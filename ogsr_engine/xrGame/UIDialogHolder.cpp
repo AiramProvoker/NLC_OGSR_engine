@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "fl_hook.h"
 #include "UIDialogHolder.h"
 #include "ui\UIDialogWnd.h"
 #include "UICursor.h"
@@ -171,6 +172,9 @@ CUIDialogWnd* CDialogHolder::MainInputReceiver()
 
 void CDialogHolder::SetMainInputReceiver(CUIDialogWnd* ir, bool _find_remove, const Flags8 flags)
 {
+    if (fl_hook::pda3d_block_input_receiver(ir))
+        return;
+
     if (MainInputReceiver() == ir)
         return;
 

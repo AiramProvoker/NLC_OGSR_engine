@@ -8,6 +8,7 @@
 
 #include "stdafx.h"
 #include "xrServer_Objects_ALife_Monsters.h"
+#include "xrServer_Objects_ALife_Items.h"
 #include "alife_simulator.h"
 #include "specific_character.h"
 #include "ai_space.h"
@@ -147,11 +148,9 @@ void CSE_ALifeDynamicObject::detach(CSE_ALifeInventoryItem* tpALifeInventoryItem
     children.erase(i);
 }
 
-void add_online_impl(CSE_ALifeDynamicObject* object, const bool& update_registries)
+static void add_online_children(CSE_ALifeDynamicObject* object, const ClientID& clientID)
 {
     NET_Packet tNetPacket;
-    ClientID clientID;
-    clientID.set(object->alife().server().GetServerClient() ? object->alife().server().GetServerClient()->ID.value() : 0);
 
     ALife::OBJECT_IT I = object->children.begin();
     ALife::OBJECT_IT E = object->children.end();
@@ -183,7 +182,20 @@ void add_online_impl(CSE_ALifeDynamicObject* object, const bool& update_registri
         object->alife().server().Process_spawn(tNetPacket, clientID, FALSE, l_tpALifeInventoryItem->base());
         l_tpALifeDynamicObject->s_flags.And(u16(-1) ^ M_SPAWN_UPDATE);
         l_tpALifeDynamicObject->m_bOnline = true;
+
+        // a container carried by this object brings its own contents online too, otherwise they stay
+        // offline under an online parent and the server trips over them when it clears the level
+        if (smart_cast<CSE_InventoryContainer*>(l_tpALifeDynamicObject))
+            add_online_children(l_tpALifeDynamicObject, clientID);
     }
+}
+
+void add_online_impl(CSE_ALifeDynamicObject* object, const bool& update_registries)
+{
+    ClientID clientID;
+    clientID.set(object->alife().server().GetServerClient() ? object->alife().server().GetServerClient()->ID.value() : 0);
+
+    add_online_children(object, clientID);
 
     if (!update_registries)
         return;

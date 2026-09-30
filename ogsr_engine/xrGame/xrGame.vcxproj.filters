@@ -4023,6 +4023,9 @@
     <ClInclude Include="..\COMMON_AI\script_flags.h">
       <Filter>AI\AScript\ScriptClasses\ScriptFlags</Filter>
     </ClInclude>
+    <ClInclude Include="..\COMMON_AI\script_random.h">
+      <Filter>AI\AScript\ScriptClasses\ScriptFlags</Filter>
+    </ClInclude>
     <ClInclude Include="..\COMMON_AI\script_fmatrix.h">
       <Filter>AI\AScript\ScriptClasses\ScriptFmatrix</Filter>
     </ClInclude>
@@ -4223,6 +4226,9 @@
     </ClInclude>
     <ClInclude Include="level_debug.h">
       <Filter>Core\Client\Level Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="fl_hook.h">
+      <Filter>Core\Common\Console Commands</Filter>
     </ClInclude>
     <ClInclude Include="Actor.h">
       <Filter>Core\Client\Objects\actor\base</Filter>
@@ -7096,6 +7102,9 @@
     <ClCompile Include="..\COMMON_AI\script_flags_script.cpp">
       <Filter>AI\AScript\ScriptClasses\ScriptFlags</Filter>
     </ClCompile>
+    <ClCompile Include="..\COMMON_AI\script_random_script.cpp">
+      <Filter>AI\AScript\ScriptClasses\ScriptFlags</Filter>
+    </ClCompile>
     <ClCompile Include="..\COMMON_AI\script_fmatrix_script.cpp">
       <Filter>AI\AScript\ScriptClasses\ScriptFmatrix</Filter>
     </ClCompile>
@@ -7958,6 +7967,9 @@
       <Filter>Core\Common</Filter>
     </ClCompile>
     <ClCompile Include="console_commands.cpp">
+      <Filter>Core\Common\Console Commands</Filter>
+    </ClCompile>
+    <ClCompile Include="fl_hook.cpp">
       <Filter>Core\Common\Console Commands</Filter>
     </ClCompile>
     <ClCompile Include="date_time.cpp">

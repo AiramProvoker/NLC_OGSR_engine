@@ -179,7 +179,14 @@ void CUIItemInfo::InitItem(CInventoryItem* pInvItem)
             pItem->SetFont(m_desc_info.pDescFont);
             pItem->SetWidth(UIDesc->GetDesiredChildWidth());
             pItem->SetTextComplexMode(true);
-            pItem->SetText(*pInvItem->ItemDescription());
+            LPCSTR descr = *pInvItem->ItemDescription();
+            if (pSettings->line_exist("engine_callbacks", "ui_item_text_info_callback"))
+            {
+                const std::string callback = pSettings->r_string("engine_callbacks", "ui_item_text_info_callback");
+                if (luabind::functor<LPCSTR> lua_function; ai().script_engine().functor(callback.c_str(), lua_function))
+                    descr = lua_function(pInvItem->m_Description.c_str(), pInvItem->object().lua_game_object());
+            }
+            pItem->SetText(descr);
             pItem->AdjustHeightToText();
             UIDesc->AddWindow(pItem, true);
         }

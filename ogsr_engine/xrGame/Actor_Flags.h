@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 enum
 {
@@ -25,7 +25,9 @@ enum
     AF_LOCK_RELOAD = 1 << 20,
     AF_CAM_COLLISION_COP = 1 << 21,
     AF_ACTOR_SHADOW = 1 << 22,
-    AF_THROW_DEBUG = 1 << 23,
+    AF_SHOW_DYN_DESC_WND = (1 << 23),
+    AF_HIDE_UNTRADABLE_ITEMS = (1 << 24),
+    AF_THROW_DEBUG = 1 << 25,
 };
 
 //enum

@@ -629,15 +629,15 @@ float CScriptGameObject::GetActorWalkAccel() const
     }
     return act->GetWalkAccel();
 }
-float CScriptGameObject::GetActorExoFactor() const
+float CScriptGameObject::GetMovementSpeedMultiplier() const
 {
     const CActor* act = smart_cast<CActor*>(&object());
     if (!act)
     {
-        ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError, "CActor : cannot perform SlowDownActor!");
+        ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError, "CActor : cannot perform GetMovementSpeedMultiplier!");
         return 0.f;
     }
-    return act->GetExoFactor();
+    return act->m_fMovementSpeedMultiplier;
 }
 void CScriptGameObject::SetActorWalkAccel(float _factor)
 {
@@ -659,22 +659,16 @@ void CScriptGameObject::SetActorJumpSpeed(float _factor)
     }
     act->SetJumpSpeed(_factor);
 }
-void CScriptGameObject::SetActorExoFactor(float _factor)
+void CScriptGameObject::SetMovementSpeedMultiplier(float _factor)
 {
     CActor* act = smart_cast<CActor*>(&object());
     if (!act)
     {
-        ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError, "CActor : cannot perform SlowDownActor!");
+        ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError, "CActor : cannot perform SetMovementSpeedMultiplier!");
         return;
     }
-    act->SetExoFactor(_factor);
-}
-
-CUIStatic* CScriptGameObject::GetCellItem() const
-{
-    if (auto obj = smart_cast<CInventoryItem*>(&object()))
-        return (CUIStatic*)obj->m_cell_item;
-    return NULL;
+    act->m_fMovementSpeedMultiplier = _factor;
+    clamp(act->m_fMovementSpeedMultiplier, 0.1f, 1.2f);
 }
 
 LPCSTR CScriptGameObject::GetBoneName(u16 id) const

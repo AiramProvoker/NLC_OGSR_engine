@@ -56,6 +56,7 @@ public:
 
     void AddQuestion(LPCSTR str, LPCSTR value, int);
     void AddAnswer(LPCSTR SpeakerName, LPCSTR str, bool bActor);
+    LPCSTR replace_lua_func(LPCSTR str);
     void AddIconedAnswer(LPCSTR text, LPCSTR texture_name, Frect texture_rect, LPCSTR templ_name);
     void ClearAll();
     void ClearQuestions();
@@ -79,6 +80,7 @@ private:
 
     // Шрифт и цвет текста с именем персонажа
     CGameFont* m_pNameTextFont;
+    std::string replaced_lua_str;
     u32 m_iNameTextColor;
     // Цвет тeкста и шрифт наших реплик
     u32 m_uOurReplicsColor;

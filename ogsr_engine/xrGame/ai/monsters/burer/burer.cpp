@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "script_engine.h"
+#include "../../../ai_space.h"
 #include "burer.h"
 #include "../../../PhysicsShell.h"
 #include "../../../characterphysicssupport.h"
@@ -239,6 +241,10 @@ void CBurer::StaminaHit()
     {
         return;
     }
+
+    luabind::functor<bool> func_check;
+    if (ai().script_engine().functor("bind_monster.handle_glass_new_on_belt", func_check) && func_check())
+        return;
 
     float const weight = active_weapon->Weight();
     float const stamina_hit = weight * m_weight_to_stamina_hit;

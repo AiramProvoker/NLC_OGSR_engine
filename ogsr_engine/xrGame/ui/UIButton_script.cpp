@@ -49,7 +49,12 @@ void CUIButton::script_register(lua_State* L)
 
               class_<CUICustomSpin, CUIWindow>("CUICustomSpin").def("Init", &CUICustomSpin::Init).def("GetText", &CUICustomSpin::GetText),
 
-              class_<CUISpinNum, CUICustomSpin>("CUISpinNum").def(constructor<>()),
+              class_<CUISpinNum, CUICustomSpin>("CUISpinNum")
+                  .def(constructor<>())
+                  .def("SetMax", &CUISpinNum::SetMax)
+                  .def("SetMin", &CUISpinNum::SetMin)
+                  .def("SetVal", &CUISpinNum::SetVal)
+                  .def("SetReverse", &CUISpinNum::SetReverse),
 
               class_<CUISpinFlt, CUICustomSpin>("CUISpinFlt").def(constructor<>()),
 

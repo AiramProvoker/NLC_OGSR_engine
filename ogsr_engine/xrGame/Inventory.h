@@ -43,7 +43,8 @@ public:
     float TotalWeight() const;
     float CalcTotalWeight();
 
-    void Take(CGameObject* pObj, bool bNotActivate, bool strict_placement);
+    void Take(CGameObject* pObj, bool bNotActivate, bool strict_placement, bool picked_up_flag = false);
+    void ReplaceInMap(CGameObject* pObj, LPCSTR new_section);
     bool DropItem(CGameObject* pObj);
     void Clear();
 
@@ -67,6 +68,7 @@ public:
     PIItem ActiveItem() const { return m_iActiveSlot == NO_ACTIVE_SLOT ? NULL : m_slots[m_iActiveSlot].m_pIItem; }
     PIItem ItemFromSlot(u32 slot) const;
     bool Action(s32 cmd, u32 flags);
+    bool ActionImpl(s32 cmd, u32 flags);
     void Update();
     // Ищет на поясе аналогичный IItem
     PIItem Same(const PIItem pIItem, bool bSearchRuck) const;
@@ -143,6 +145,7 @@ public:
 
     // Объект на который наведен прицел
     PIItem m_pTarget;
+    bool AllowAfEffects;
 
     friend class CInventoryOwner;
 
@@ -181,6 +184,7 @@ protected:
     // Максимальное кол-во объектов
     //на поясе
     u32 m_iMaxBelt;
+    int m_iMaxBeltCustom;
     // Максимальное расстояние на котором можно подобрать объект
     float m_fTakeDist;
 

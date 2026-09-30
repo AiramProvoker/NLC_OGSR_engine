@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../ai_space.h"
 #include <dinput.h>
 #include "UITalkDialogWnd.h"
 
@@ -144,8 +145,50 @@ void CUITalkDialogWnd::ClearAll()
 
 void CUITalkDialogWnd::ClearQuestions() { UIQuestionsList->Clear(); }
 
+LPCSTR CUITalkDialogWnd::replace_lua_func(LPCSTR str)
+{
+    static constexpr LPCSTR marker = "$$LUASTRING_";
+    static constexpr size_t marker_len = 12;
+
+    LPCSTR pos = strstr(str, marker);
+    if (!pos)
+        return str;
+
+    replaced_lua_str.clear();
+    size_t cur = 0;
+    while (pos)
+    {
+        replaced_lua_str.append(str + cur, pos - str - cur);
+
+        LPCSTR name_begin = pos + marker_len;
+        const int len = int(strstr(name_begin, "$$") - name_begin);
+        string256 srcbuff{};
+        strncpy_s(srcbuff, name_begin, len);
+
+        LPCSTR result = srcbuff;
+        luabind::functor<LPCSTR> func;
+        if (ai().script_engine().functor(srcbuff, func))
+            result = func();
+        else
+            Msg("!![%s]: lua function [%s] not found!", __FUNCTION__, srcbuff);
+
+        string256 buff;
+        xr_sprintf(buff, "%s", result);
+        replaced_lua_str.append(buff);
+
+        cur = size_t(pos - str) + len + marker_len + 2;
+        pos = strstr(str + cur, marker);
+    }
+
+    if (cur < xr_strlen(str))
+        replaced_lua_str.append(str + cur);
+
+    return replaced_lua_str.c_str();
+}
+
 void CUITalkDialogWnd::AddQuestion(LPCSTR str, LPCSTR value, int number)
 {
+    str = replace_lua_func(str);
     CUIQuestionItem* itm = xr_new<CUIQuestionItem>(m_uiXml, "question_item");
     std::string question_text{str};
     ++number; // zero-based index
@@ -180,6 +223,7 @@ void CUITalkDialogWnd::AddQuestion(LPCSTR str, LPCSTR value, int number)
 #include "../alife_registry_wrappers.h"
 void CUITalkDialogWnd::AddAnswer(LPCSTR SpeakerName, LPCSTR str, bool bActor)
 {
+    str = replace_lua_func(str);
     CUIAnswerItem* itm = xr_new<CUIAnswerItem>(m_uiXml, bActor ? "actor_answer_item" : "other_answer_item");
     itm->Init(str, SpeakerName);
     UIAnswersList->AddWindow(itm, true);

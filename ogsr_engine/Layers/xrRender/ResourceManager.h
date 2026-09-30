@@ -183,6 +183,7 @@ public:
     void Dump(bool bBrief) const;
 
     xr_vector<ITexture*> FindTexture(const char* Name) const override;
+    ITexture* CreateTexture(const char* Name) override;
 
 private:
     template <typename T>

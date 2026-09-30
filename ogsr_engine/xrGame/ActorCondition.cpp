@@ -37,6 +37,15 @@ CActorCondition::CActorCondition(CActor* object) : inherited(object)
     m_fSatiety = 1.0f;
     m_fThirst = 1.0f;
 
+    auto path_exists = [](LPCSTR alias) {
+        const FS_Path* P = FS.get_path(alias);
+        return P && GetFileAttributes(P->m_Path) != INVALID_FILE_ATTRIBUTES;
+    };
+    if (path_exists("$game_config$"))
+        m_gamedata_flag_tmp += 1.f;
+    if (path_exists("$game_scripts$"))
+        m_gamedata_flag_tmp += 2.f;
+
     m_bJumpRequirePower = false;
 
     VERIFY(object);
@@ -66,6 +75,7 @@ void CActorCondition::LoadCondition(LPCSTR entity_section)
     m_fOverweightJumpK = pSettings->r_float(section, "overweight_jump_k");
     m_fAccelK = pSettings->r_float(section, "accel_k");
     m_fSprintK = pSettings->r_float(section, "sprint_k");
+    g_up_speed_k = READ_IF_EXISTS(pSettings, r_float, section, "up_speed_k", 1.3f);
 
     m_bJumpRequirePower = READ_IF_EXISTS(pSettings, r_bool, section, "jump_require_power", false);
 
@@ -430,9 +440,26 @@ void CActorCondition::ConditionJump(float weight)
 }
 void CActorCondition::ConditionWalk(float weight, bool accel, bool sprint)
 {
-    float power = m_fWalkPower;
-    power += m_fWalkWeightPower * weight * (weight > 1.f ? m_fOverweightWalkK : 1.f);
-    power *= m_fDeltaTime * (accel ? (sprint ? m_fSprintK : m_fAccelK) : 1.f);
+    static float last_y = 0.f;
+
+    const float max_carry = object().MaxCarryWeight();
+    float power = m_fWalkWeightPower * weight;
+    const float overweight = max_carry * weight - max_carry;
+    if (overweight > 0.f)
+        power += m_fOverweightWalkK * 0.0000001f * (overweight * overweight);
+    power += m_fWalkPower;
+    power *= (accel ? (sprint ? m_fSprintK : m_fAccelK) : 1.f) * m_fDeltaTime;
+
+    float up = 0.f;
+    const float y = g_actor->Position().y;
+    if (last_y != 0.f && y != last_y)
+        up = (y - last_y) * 0.3f;
+    power *= 0.5f;
+    last_y = y;
+
+    if (up > 0.f)
+        power += up * g_up_speed_k * m_fJumpWeightPower * weight * (weight > 1.f ? m_fOverweightJumpK : 1.f);
+
     m_fPower -= HitPowerEffect(power);
 }
 
@@ -508,6 +535,9 @@ void CActorCondition::save(NET_Packet& output_packet)
     save_data(m_condition_flags, output_packet);
     save_data(m_fSatiety, output_packet);
     save_data(m_fThirst, output_packet);
+    if (m_gamedata_flag_tmp > m_gamedata_flag)
+        m_gamedata_flag = m_gamedata_flag_tmp;
+    save_data(m_gamedata_flag, output_packet);
 }
 
 #include "alife_registry_wrappers.h"
@@ -522,6 +552,8 @@ void CActorCondition::load(IReader& input_packet)
     if (ai().get_alife()->header().version() > 8)
     {
         load_data(m_fThirst, input_packet);
+        load_data(m_gamedata_flag, input_packet);
+        Msg("Gamedata flags: [%f]", m_gamedata_flag);
     }
 }
 

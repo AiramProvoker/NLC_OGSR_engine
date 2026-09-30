@@ -270,8 +270,12 @@ public:
     bool at_home();
     bool at_home(Fvector);
     void remove_home();
-    void berserk();
+    void berserk(bool flag);
+    bool is_berserk();
     void set_custom_panic_threshold(float value);
+    void SetSection(LPCSTR section);
+    void SetObjectName(LPCSTR name);
+    void ReloadNextAmmo(u32 next_ammo_type);
     void set_default_panic_threshold();
 
     // CAI_Trader
@@ -552,6 +556,7 @@ public:
     // CustomZone
     void EnableAnomaly();
     void DisableAnomaly(bool = false);
+    void SetIgnoreAny(bool status);
     float GetAnomalyPower();
     void SetAnomalyPower(float p);
 
@@ -607,6 +612,8 @@ public:
     void buy_condition(float friend_factor, float enemy_factor);
     void show_condition(CInifile* ini_file, LPCSTR section);
     void buy_supplies(CInifile* ini_file, LPCSTR section);
+    void setTradeVCost(float vcost, bool override);
+    void ignoreTradeCondFactor(bool override);
 
     LPCSTR sound_prefix() const;
     void sound_prefix(LPCSTR sound_prefix);
@@ -722,6 +729,7 @@ public:
 
     // для CEatableItem, используются в реализации радиопротектора
     void ZeroEffects();
+    void DisableUse();
     void SetRadiationInfluence(float _rad);
     // для актора - иммунитеты
     void SetDrugRadProtection(float _prot);
@@ -781,12 +789,11 @@ public:
     void SetActorJumpSpeed(float _factor);
     float GetActorWalkAccel() const;
     void SetActorWalkAccel(float _factor);
-    float GetActorExoFactor() const; // влияет на бег в экзе
-    void SetActorExoFactor(float _factor); // влияет на бег в экзе
+    float GetMovementSpeedMultiplier() const;
+    void SetMovementSpeedMultiplier(float _factor);
     // KD
 
     // Real Wolf 07.07.2014.
-    CUIStatic* GetCellItem() const;
     LPCSTR GetBoneName(u16) const;
 
     // alpet: visual functions for CWeapon descedants

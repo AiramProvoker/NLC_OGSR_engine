@@ -639,9 +639,16 @@ bool CAI_Bloodsucker::in_solid_state() { return true; }
 
 void CAI_Bloodsucker::Hit(SHit* pHDS)
 {
+    SHit HDS = *pHDS;
+    if (HDS.hit_type != ALife::eHitTypeExplosion && m_visibility_state <= partial_visibility)
+    {
+        HDS.power *= 0.5f;
+        HDS.impulse *= 0.5f;
+    }
+
     if (!collision_hit_off)
     {
-        inherited::Hit(pHDS);
+        inherited::Hit(&HDS);
     }
 }
 

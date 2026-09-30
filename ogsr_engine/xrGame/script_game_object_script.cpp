@@ -94,6 +94,11 @@ void CScriptGameObject::script_register(lua_State* L)
                     value("on_footstep", int(GameObject::eOnActorFootStep)),
                     value("on_actor_land", int(GameObject::eOnActorLand)),
                     value("on_actor_jump", int(GameObject::eOnActorJump)), 
+                    value("on_actor_weapon_reload_end", int(GameObject::eOnActorWeaponReloadEnd)),
+                    value("saw_object", int(GameObject::eSawObject)),
+                    value("on_before_switch_torch", int(GameObject::eBeforeSwitchTorch)),
+                    value("on_before_switch_nv", int(GameObject::eBeforeSwitchNVD)),
+                    value("on_art_anim_activation_end", int(GameObject::eOnArtAnimActivationEnd)),
                     value("on_actor_boltthrow", int(GameObject::eOnActorBoltThrow))
            )],
 

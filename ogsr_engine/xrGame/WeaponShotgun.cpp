@@ -6,6 +6,9 @@
 #include "inventory.h"
 #include "level.h"
 #include "actor.h"
+#include "game_object_space.h"
+#include "script_callback_ex.h"
+#include "script_game_object.h"
 #include "../xr_3da/x_ray.h"
 
 CWeaponShotgun::CWeaponShotgun(void) : CWeaponCustomPistol("TOZ34")
@@ -424,26 +427,32 @@ void CWeaponShotgun::OnStateSwitch(u32 S, u32 oldState)
             }
             SetPending(TRUE);
         }
+        if (auto parent = smart_cast<CActor*>(H_Parent()))
+            parent->callback(GameObject::eOnActorWeaponReload)(lua_game_object());
         break;
     }
     case eSubstateReloadInProcess: {
         if (HaveCartridgeInInventory(1))
         {
+            string128 add_anm{"anm_add_cartridge"};
+            if (allow_drum_anims)
+                xr_strconcat(add_anm, "anm_add_cartridge_", std::to_string(iAmmoElapsed).c_str());
+
             if (GetAmmoElapsed() < 1)
             {
                 PlaySound(!m_sndAddCartridgeEmpty.sounds.empty() ? m_sndAddCartridgeEmpty : m_sndAddCartridge, get_LastFP());
-                PlayHUDMotion({"anm_add_cartridge_empty", "anim_add_cartridge", "anm_add_cartridge"}, false, GetState());
+                PlayHUDMotion({"anm_add_cartridge_empty", "anim_add_cartridge", add_anm}, false, GetState());
                 StartCartridge = false;
             }
             else if (SecondCartridge)
             {
                 PlaySound(!m_sndAddCartridgeSecond.sounds.empty() ? m_sndAddCartridgeSecond : m_sndAddCartridge, get_LastFP());
-                PlayHUDMotion({"anm_add_cartridge_second", "anim_add_cartridge", "anm_add_cartridge"}, false, GetState());
+                PlayHUDMotion({"anm_add_cartridge_second", "anim_add_cartridge", add_anm}, false, GetState());
             }
             else
             {
                 PlaySound(StartCartridge && !m_sndAddCartridgeStart.sounds.empty() ? m_sndAddCartridgeStart : m_sndAddCartridge, get_LastFP());
-                PlayHUDMotion({StartCartridge ? "anm_add_cartridge_start" : "anm_add_cartridge", "anim_add_cartridge", "anm_add_cartridge"}, false, GetState());
+                PlayHUDMotion({StartCartridge ? "anm_add_cartridge_start" : add_anm, "anim_add_cartridge", add_anm}, false, GetState());
                 StartCartridge = false;
             }
             SetPending(TRUE);

@@ -264,7 +264,7 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(IRenderable* root, dxRender_V
             return;
         }
 
-        if (sh->flags.bStrictB2F && !Is3dssZoomed)
+        if (sh->flags.bStrictB2F && (sh->flags.iScopePass || !Is3dssZoomed))
         {
             mapHUDSorted.insert_anyway(dist_sqr, _MatrixItemS({.ssa= SSA, .pObject= root, .pVisual= pVisual, .Matrix= xform, .se= sh}));
             return;
@@ -272,7 +272,7 @@ void R_dsgraph_structure::r_dsgraph_insert_dynamic(IRenderable* root, dxRender_V
 
         mapHUD.insert_anyway(dist_sqr, _MatrixItemS({.ssa= SSA, .pObject= root, .pVisual= pVisual, .Matrix= xform, .se= sh}));
 
-        if (sh->flags.bEmissive && sh_d && !Is3dssZoomed)
+        if (sh->flags.bEmissive && sh_d && (sh->flags.iScopePass || !Is3dssZoomed))
         {
             mapHUDEmissive.insert_anyway(dist_sqr, _MatrixItemS({.ssa= SSA, .pObject= root, .pVisual= pVisual, .Matrix= xform, .se= sh_d}));
         }

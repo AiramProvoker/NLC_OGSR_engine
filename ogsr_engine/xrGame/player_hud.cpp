@@ -451,6 +451,14 @@ void hud_item_measures::load(const shared_str& sect_name, IKinematics* K)
     else
         m_hands_offset[m_hands_offset_rot][m_hands_offset_type_aim] = READ_IF_EXISTS(pSettings, r_fvector3, sect_name, val_name, Fvector{});
 
+    strconcat(sizeof(val_name), val_name, "alt_aim_hud_offset_pos", _prefix);
+    if (pSettings->line_exist(sect_name, "alt_aim_hud_offset_pos"))
+        m_hands_offset[m_hands_offset_pos][m_hands_offset_type_aim_alt] = READ_IF_EXISTS(pSettings, r_fvector3, sect_name, val_name, Fvector{});
+
+    strconcat(sizeof(val_name), val_name, "alt_aim_hud_offset_rot", _prefix);
+    if (pSettings->line_exist(sect_name, "alt_aim_hud_offset_rot"))
+        m_hands_offset[m_hands_offset_rot][m_hands_offset_type_aim_alt] = READ_IF_EXISTS(pSettings, r_fvector3, sect_name, val_name, Fvector{});
+
     strconcat(sizeof(val_name), val_name, "gl_hud_offset_pos", _prefix);
     if (is_16x9 && !pSettings->line_exist(sect_name, val_name))
         xr_strcpy(val_name, "gl_hud_offset_pos");
@@ -901,6 +909,12 @@ void player_hud::render_hud(u32 context_id, IRenderable* root)
             ::Render->add_Visual(context_id, root, script_anim_item_model->dcast_RenderVisual(), m_item_pos);
         }
     }
+}
+
+void player_hud::render_script_item_only(u32 context_id, IRenderable* root)
+{
+    if (script_anim_item_model)
+        ::Render->add_Visual(context_id, root, script_anim_item_model->dcast_RenderVisual(), m_item_pos);
 }
 
 #include "../xr_3da/motion.h"

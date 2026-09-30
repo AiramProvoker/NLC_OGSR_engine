@@ -29,6 +29,7 @@ private:
     void ChangeLevel();
 
 public:
+    void SetSilentMode(u8 sm) { m_SilentMode = sm; }
     virtual ~CLevelChanger();
     virtual BOOL net_Spawn(CSE_Abstract* DC);
     virtual void net_Destroy();

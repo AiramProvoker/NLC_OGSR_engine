@@ -206,8 +206,11 @@ void CBulletManager::FireShotmark(SBullet* bullet, const Fvector& vDir, const Fv
         particle_dir.invert();
 
         //на текущем актере отметок не ставим
-        if (!smart_cast<CActor*>(R.O) && mtl_pair && !mtl_pair->m_pCollideMarks->empty() && ShowMark)
+        if (!smart_cast<CActor*>(R.O) && mtl_pair && !mtl_pair->m_pCollideMarks->empty() && ShowMark && bullet->targetID != m_iLastWallmarkObjectID &&
+            Device.dwFrame != m_dwLastWallmarkFrame)
         {
+            m_iLastWallmarkObjectID = bullet->targetID;
+            m_dwLastWallmarkFrame = Device.dwFrame;
             //добавить отметку на материале
             Fvector p;
             p.mad(bullet->pos, bullet->dir, R.range - 0.01f);

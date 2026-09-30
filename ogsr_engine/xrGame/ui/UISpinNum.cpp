@@ -40,6 +40,9 @@ void CUISpinNum::IncVal()
     if (CanPressUp())
         m_iVal += m_iStep;
 
+    if (can_reverse && m_iVal > m_iMax)
+        m_iVal = m_iMin;
+
     SetValue();
 }
 
@@ -48,6 +51,27 @@ void CUISpinNum::DecVal()
     if (CanPressDown())
         m_iVal -= m_iStep;
 
+    if (can_reverse && m_iVal < m_iMin)
+        m_iVal = m_iMax;
+
+    SetValue();
+}
+
+void CUISpinNum::SetMax(int max)
+{
+    m_iMax = max;
+    SetValue();
+}
+
+void CUISpinNum::SetMin(int min)
+{
+    m_iMin = min;
+    SetValue();
+}
+
+void CUISpinNum::SetVal(int val)
+{
+    m_iVal = val;
     SetValue();
 }
 
@@ -65,13 +89,14 @@ void CUISpinNum::OnBtnDownClick()
 
 void CUISpinNum::SetValue()
 {
+    clamp(m_iVal, m_iMin, m_iMax);
     string16 buff;
     m_pLines->SetText(_itoa(m_iVal, buff, 10));
 }
 
-bool CUISpinNum::CanPressUp() { return m_iVal + m_iStep <= m_iMax; }
+bool CUISpinNum::CanPressUp() { return can_reverse || m_iVal + m_iStep <= m_iMax; }
 
-bool CUISpinNum::CanPressDown() { return m_iVal - m_iStep >= m_iMin; }
+bool CUISpinNum::CanPressDown() { return can_reverse || m_iVal - m_iStep >= m_iMin; }
 
 CUISpinFlt::CUISpinFlt() : m_fVal(0), m_fMin(0), m_fMax(100), m_fStep(0.1f) {}
 

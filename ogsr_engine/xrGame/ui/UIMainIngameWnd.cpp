@@ -64,7 +64,7 @@ static CUIMainIngameWnd* GetMainIngameWindow()
     return nullptr;
 }
 
-static CUIStatic* warn_icon_list[8]{};
+static CUIStatic* warn_icon_list[9]{};
 
 // alpet: для возможности внешнего контроля иконок (используется в NLC6 вместо типичных индикаторов). Никак не влияет на игру для остальных модов.
 static bool external_icon_ctrl = false;
@@ -90,7 +90,7 @@ static bool SetupGameIcon(CUIMainIngameWnd::EWarningIcons icon, u32 cl, float wi
         sIcon->SetStretchTexture(cl > 0);
     }
     else
-        window->SetWarningIconColor(icon, cl);
+        window->SetWarningIconColor(icon, psHUD_Flags.test(HUD_SHOW_STATUS_ICONS) ? cl : 0);
 
     external_icon_ctrl = true;
     return true;
@@ -110,6 +110,7 @@ CUIMainIngameWnd::CUIMainIngameWnd()
     warn_icon_list[ewiWound] = &UIWoundIcon;
     warn_icon_list[ewiStarvation] = &UIStarvationIcon;
     warn_icon_list[ewiPsyHealth] = &UIPsyHealthIcon;
+    warn_icon_list[ewiSleep] = &UISleepIcon;
     warn_icon_list[ewiInvincible] = &UIInvincibleIcon;
     warn_icon_list[ewiThirst] = &UIThirstIcon;
 }
@@ -213,6 +214,9 @@ void CUIMainIngameWnd::Init()
     xml_init.InitStatic(uiXml, "wound_static", 0, &UIWoundIcon);
     UIWoundIcon.Show(false);
 
+    xml_init.InitStatic(uiXml, "sleep_static", 0, &UISleepIcon);
+    UISleepIcon.Show(false);
+
     xml_init.InitStatic(uiXml, "invincible_static", 0, &UIInvincibleIcon);
     UIInvincibleIcon.Show(false);
 
@@ -225,6 +229,7 @@ void CUIMainIngameWnd::Init()
     constexpr const char* warningStrings[] = {
         "jammed",     "radiation", "wounds", "starvation",
         "fatigue", // PsyHealth ???
+        "sleep",
         "invincible", // Not used
         "thirst",
     };
@@ -333,18 +338,7 @@ void CUIMainIngameWnd::Update()
 
     if (!(Device.dwFrame % 30))
     {
-        string256 text_str;
-        CPda* _pda = m_pActor->GetPDA();
-        u32 _cn = 0;
-        if (_pda && 0 != (_cn = _pda->ActiveContactsNum()))
-        {
-            sprintf_s(text_str, "%d", _cn);
-            UIPdaOnline.SetText(text_str);
-        }
-        else
-        {
-            UIPdaOnline.SetText("");
-        }
+        UIPdaOnline.SetText("");
     };
 
     if (!(Device.dwFrame % 5))
@@ -390,6 +384,7 @@ void CUIMainIngameWnd::Update()
             case ewiStarvation: value = 1 - m_pActor->conditions().GetSatiety(); break;
             case ewiThirst: value = 1 - m_pActor->conditions().GetThirst(); break;
             case ewiPsyHealth: value = 1 - m_pActor->conditions().GetPsyHealth(); break;
+            case ewiSleep: value = 0.f; break;
             default: R_ASSERT(!"Unknown type of warning icon");
             }
 
@@ -557,6 +552,10 @@ void CUIMainIngameWnd::SetWarningIconColor(EWarningIcons icon, const u32 cl)
             break;
     case ewiPsyHealth:
         SetWarningIconColor(&UIPsyHealthIcon, cl);
+        if (bMagicFlag)
+            break;
+    case ewiSleep:
+        SetWarningIconColor(&UISleepIcon, cl);
         if (bMagicFlag)
             break;
     case ewiInvincible:

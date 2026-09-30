@@ -40,6 +40,7 @@ private:
 
     HitImmunity::HitTypeSVec m_HitTypeProtection;
     float m_fPowerLoss{};
+    float m_hit_power_coef{1.f};
 
     shared_str m_ActorVisual;
     shared_str m_full_icon_name;

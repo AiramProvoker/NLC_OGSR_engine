@@ -95,6 +95,7 @@ ShaderElement::ShaderElement()
     flags.bDistort = FALSE;
     flags.bWmark = FALSE;
     flags.iScopeLense = FALSE;
+    flags.iScopePass = FALSE;
 }
 
 BOOL ShaderElement::equal(ShaderElement& S)

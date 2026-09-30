@@ -280,6 +280,7 @@ public:
     virtual ~IResourceManager() = default;
 
     virtual xr_vector<ITexture*> FindTexture(const char* Name) const = 0;
+    virtual ITexture* CreateTexture(const char* Name) = 0;
 };
 
 class ShExports final

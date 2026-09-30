@@ -354,7 +354,7 @@ bool CAI_Trader::AllowItemToTrade(CInventoryItem const* item, EItemPlace place) 
     if (item->object().CLS_ID == CLSID_DEVICE_PDA)
         return (false);
 
-    return (CInventoryOwner::AllowItemToTrade(item, place));
+    return (CInventoryOwner::AllowItemToTrade(item, place != eItemPlaceUndefined));
 }
 
 void CAI_Trader::dialog_sound_start(LPCSTR phrase) { animation().external_sound_start(phrase); }

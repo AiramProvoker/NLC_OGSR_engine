@@ -76,6 +76,8 @@ public:
     float GetSatiety() { return m_fSatiety; }
     float GetThirst() { return m_fThirst; }
     void SetMaxWalkWeight(float _weight) { m_MaxWalkWeight = _weight; }
+    bool getForceNextJam() { return m_forceNextJam; }
+    void setForceNextJam(bool val) { m_forceNextJam = val; }
 
     void AffectDamage_InjuriousMaterialAndMonstersInfluence();
     float GetInjuriousMaterialDamage();
@@ -89,6 +91,7 @@ public:
     virtual void save(NET_Packet& output_packet);
     virtual void load(IReader& input_packet);
     float m_MaxWalkWeight;
+    bool m_forceNextJam{};
 
     bool DisableSprint(SHit* pHDS);
     float HitSlowmo(SHit* pHDS);
@@ -112,6 +115,9 @@ protected:
     float m_fV_ThirstPower;
     float m_fV_ThirstHealth;
 
+    float m_gamedata_flag{};
+    float m_gamedata_flag_tmp{};
+
     float m_fPowerLeakSpeed;
     float m_fV_Power;
 
@@ -124,6 +130,7 @@ protected:
     float m_fOverweightJumpK;
     float m_fAccelK;
     float m_fSprintK;
+    float g_up_speed_k;
 
     bool m_bJumpRequirePower;
 

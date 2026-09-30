@@ -185,6 +185,8 @@ void CInventoryScript::script_register(lua_State* L)
 
         class_<CInventory>("CInventory")
             .def_readonly("max_belt", &CInventory::m_iMaxBelt)
+            .def_readwrite("max_belt_custom", &CInventory::m_iMaxBeltCustom)
+            .def_readwrite("allow_af_effects", &CInventory::AllowAfEffects)
             .def_readwrite("max_weight", &CInventory::m_fMaxWeight)
             .def_readwrite("take_dist", &CInventory::m_fTakeDist)
             .def_readonly("total_weight", &CInventory::m_fTotalWeight)
@@ -202,7 +204,9 @@ void CInventoryScript::script_register(lua_State* L)
             .def("object", &IInventoryBox::GetObjectByIndex)
             .def("object", &IInventoryBox::GetObjectByName)
             .def("object_count", &IInventoryBox::GetSize)
-            .def("empty", &IInventoryBox::IsEmpty),
+            .def("empty", &IInventoryBox::IsEmpty)
+            .def_readwrite("m_in_use", &IInventoryBox::m_in_use)
+            .def("get_items_weight", &IInventoryBox::GetItemsWeight),
         class_<CInventoryBox, bases<IInventoryBox, CGameObject>>("CInventoryBox"),
         class_<CInventoryContainer, bases<IInventoryBox, CInventoryItemObject>>("CInventoryContainer")
             .property("cost", &CInventoryContainer::Cost)
@@ -239,7 +243,11 @@ void CMonsterScript::script_register(lua_State* L)
                   .def_readwrite("run_turn_left", &CBaseMonster::m_bRunTurnLeft)
                   .def_readwrite("run_turn_right", &CBaseMonster::m_bRunTurnRight)
                   .def_readwrite("sleep", &CBaseMonster::m_bSleep)
-                  .def_readwrite("state_invisible", &CBaseMonster::state_invisible)];
+                  .def_readwrite("state_invisible", &CBaseMonster::state_invisible)
+                  .enum_("aura_type")[value("eBaseTypeAura", int(CBaseMonster::eAuraTypeBase)), value("ePsyTypeAura", int(CBaseMonster::eAuraTypePsy)),
+                                      value("eFireTypeAura", int(CBaseMonster::eAuraTypeFire)), value("eRadTypeAura", int(CBaseMonster::eAuraTypeRad))]
+                  .def("enable_aura", &CBaseMonster::enable_aura)
+                  .def("is_aura_enabled", &CBaseMonster::is_aura_enabled)];
 }
 
 int curr_fire_mode(CWeaponMagazined* wpn) { return wpn->GetCurrentFireMode(); }
@@ -259,6 +267,7 @@ void COutfitScript::script_register(lua_State* L)
                   .def_readwrite("thirst_restore_speed", &CCustomOutfit::m_fThirstRestoreSpeed)
 
                   .def_readwrite("power_loss", &CCustomOutfit::m_fPowerLoss)
+                  .def_readwrite("hit_power_coef", &CCustomOutfit::m_hit_power_coef)
                   .property("burn_protection", &get_protection<ALife::eHitTypeBurn>, &set_protection<ALife::eHitTypeBurn>)
                   .property("strike_protection", &get_protection<ALife::eHitTypeStrike>, &set_protection<ALife::eHitTypeStrike>)
                   .property("shock_protection", &get_protection<ALife::eHitTypeShock>, &set_protection<ALife::eHitTypeShock>)
@@ -408,6 +417,7 @@ void CWeaponScript::script_register(lua_State* L)
                   .def_readwrite("scope_status", &CWeapon::m_eScopeStatus)
                   .def_readwrite("silencer_status", &CWeapon::m_eSilencerStatus)
                   .def_readwrite("grenade_launcher_status", &CWeapon::m_eGrenadeLauncherStatus)
+                  .def("misfire_status", &CWeapon::IsMisfire)
 
                   .property("scope_name", &get_scope_name, &set_scope_name)
                   .property("silencer_name", &get_silencer_name, &set_silencer_name)
@@ -423,6 +433,7 @@ void CWeaponScript::script_register(lua_State* L)
                   .property("const_deviation", &CWeaponScript::FireDeviation) // отклонение при стрельбе от целика (для непристрелляного оружия).
                   .def("get_ammo_current", &CWeapon::GetAmmoCurrent)
                   //.def("load_config"						,			&CWeapon::Load)
+                  .def("start_fire_forced", &CWeapon::ForcedFireStart)
                   .def("start_fire", &CWeapon::FireStart)
                   .def("stop_fire", &CWeapon::FireEnd)
                   .def("start_fire2", &CWeapon::Fire2Start) // огонь ножом - правой кнопкой? )
@@ -450,7 +461,10 @@ void CWeaponScript::script_register(lua_State* L)
                   .def("switch_gl", &CWeaponMagazinedWGrenade::SwitchMode),
               class_<CMissile, CInventoryItemObject>("CMissile")
                   .def_readwrite("destroy_time", &CMissile::m_dwDestroyTime)
-                  .def_readwrite("destroy_time_max", &CMissile::m_dwDestroyTimeMax))];
+                  .def_readwrite("destroy_time_max", &CMissile::m_dwDestroyTimeMax),
+              class_<CWeaponAmmo, CInventoryItemObject>("CWeaponAmmo")
+                  .def_readwrite("current", &CWeaponAmmo::m_boxCurr)
+                  .def_readwrite("size", &CWeaponAmmo::m_boxSize))];
 }
 
 void CCustomMonsterScript::script_register(lua_State* L)

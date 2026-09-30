@@ -38,7 +38,7 @@ void CMapSpot::Update()
     if (m_bCursorOverWindow && h && xr_strlen(h))
     {
         VERIFY(m_dwFocusReceiveTime >= 0);
-        if (Device.dwTimeGlobal > (m_dwFocusReceiveTime + 500))
+        if (Device.dwTimeGlobal > (m_dwFocusReceiveTime + 500) && !strstr(h, "no hint") && h[0] != '?')
         {
             GetMessageTarget()->SendMessage(this, MAP_SHOW_HINT, NULL);
         }

@@ -91,7 +91,7 @@ void CCustomOutfit::Load(LPCSTR section)
 
 void CCustomOutfit::Hit(float hit_power, ALife::EHitType hit_type)
 {
-    hit_power *= m_HitTypeK[hit_type];
+    hit_power *= m_HitTypeK[hit_type] * m_hit_power_coef;
 
     if (hit_power > 0)
     {

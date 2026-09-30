@@ -4,6 +4,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "fl_hook.h"
 #include "HudItem.h"
 #include "player_hud.h"
 #include "../xr_3da/gamemtllib.h"
@@ -57,6 +58,11 @@ void CHudItem::Load(LPCSTR section)
 
         hud_recalc_koef = READ_IF_EXISTS(pSettings, r_float, hud_sect, "hud_recalc_koef",
                                          1.35f); //На калаше при 1.35 вроде норм смотрится, другим стволам возможно придется подбирать другие значения.
+
+        if (pSettings->line_exist(hud_sect, "allow_drum_anims"))
+            allow_drum_anims = pSettings->r_bool(hud_sect, "allow_drum_anims");
+        if (pSettings->line_exist(hud_sect, "use_alt_aim_zoom"))
+            m_bUseAltAimZoom = pSettings->r_bool(hud_sect, "use_alt_aim_zoom");
     }
 
     m_animation_slot = pSettings->r_u32(section, "animation_slot");
@@ -366,6 +372,13 @@ void CHudItem::on_a_hud_attach()
 
 u32 CHudItem::PlayHUDMotion(const char* M, const bool bMixIn, const u32 state, const bool randomAnim, float speed)
 {
+    if (fl_hook::knife_combo_applicable(this))
+        return fl_hook::knife_play_motion(this, M, bMixIn, state, randomAnim, speed);
+    return PlayHUDMotion_base(M, bMixIn, state, randomAnim, speed);
+}
+
+u32 CHudItem::PlayHUDMotion_base(const char* M, const bool bMixIn, const u32 state, const bool randomAnim, float speed)
+{
     auto Wpn = g_player_hud->attached_item(0);
     auto Det = g_player_hud->attached_item(1);
 
@@ -559,6 +572,16 @@ bool CHudItem::TryPlayAnimIdle()
 {
     PlayHUDMotion({ "anim_idle", "anm_bore" }, true, GetState());
 }*/
+
+bool CHudItem::AddSuffixName(shared_str& anim, LPCSTR suffix, LPCSTR suffix2) const
+{
+    string128 new_name{};
+    xr_strconcat(new_name, anim.c_str(), suffix, suffix2);
+    if (!AnimationExist(new_name))
+        return false;
+    anim = new_name;
+    return true;
+}
 
 bool CHudItem::AnimationExist(const char* anim_name) const
 {
@@ -1343,7 +1366,7 @@ extern ENGINE_API float psHUD_FOV;
 void CHudItem::CorrectDirFromWorldToHud(Fvector& worldPos)
 {
     Fmatrix hud_project;
-    hud_project.build_projection(deg2rad(psHUD_FOV <= 1.f ? psHUD_FOV * Device.fFOV : psHUD_FOV), Device.fASPECT, HUD_VIEWPORT_NEAR,
+    hud_project.build_projection(deg2rad(psHUD_FOV * 67.5f), Device.fASPECT, HUD_VIEWPORT_NEAR,
                                  g_pGamePersistent->Environment().CurrentEnv->far_plane);
 
     Device.mView.transform_dir(worldPos);

@@ -20,6 +20,14 @@ LPCSTR get_name(const CSE_Abstract* abstract) { return (abstract->name_replace()
 
 void script_set_name(CSE_Abstract* abstract, LPCSTR name) { abstract->set_name_replace(name);  }
 
+void set_section_name(CSE_Abstract* abstract, LPCSTR section)
+{
+    abstract->set_name(section);
+    string64 buff;
+    sprintf_s(buff, "%s%d", section, abstract->ID);
+    abstract->set_name_replace(buff);
+}
+
 CInifile* get_spawn_ini(CSE_Abstract* abstract) { return ((CInifile*)&abstract->spawn_ini()); }
 
 void save_spawn_ini(CSE_Abstract* abstract)
@@ -92,6 +100,7 @@ void CSE_Abstract::script_register(lua_State* L)
                   .def_readwrite("position", &BaseType::o_Position)
                   .def_readwrite("angle", &BaseType::o_Angle)
                   .def("section_name", &get_section_name)
+                  .def("set_section_name", &set_section_name)
                   .def("name", &get_name)
                   .def("set_name", &script_set_name)
                   .def("clsid", &BaseType::script_clsid)

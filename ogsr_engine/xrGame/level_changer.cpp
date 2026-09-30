@@ -105,6 +105,7 @@ void CLevelChanger::shedule_Update(u32 dt)
 }
 
 extern bool g_block_all_except_movement;
+bool g_block_change_level = false;
 
 void CLevelChanger::feel_touch_new(CObject* tpObject)
 {
@@ -113,9 +114,9 @@ void CLevelChanger::feel_touch_new(CObject* tpObject)
     if (!l_tpActor->g_Alive())
         return;
 
-    if (m_SilentMode || g_block_all_except_movement)
+    if (m_SilentMode || g_block_all_except_movement || g_block_change_level)
     {
-        if (m_SilentMode == 2 || g_block_all_except_movement)
+        if (m_SilentMode == 2 || g_block_all_except_movement || g_block_change_level)
         {
             Fvector p, r;
             if (get_reject_pos(p, r))

@@ -488,3 +488,7 @@ CBaseMonster::SDebugInfo CPoltergeist::show_debug_info()
     return CBaseMonster::SDebugInfo();
 }
 #endif
+
+void CPoltergeist::enable_ability(bool flag) { ability()->m_enabled = flag; }
+
+bool CPoltergeist::is_ability_enabled() { return ability()->m_enabled; }

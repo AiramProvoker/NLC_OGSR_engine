@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../ai_space.h"
 #include "UITaskItem.h"
 #include "UIXmlInit.h"
 #include "UI3tButton.h"
@@ -126,6 +127,15 @@ void CUITaskRootItem::SetGameTask(CGameTask* gt, u16 obj_idx)
 
         _height = _max(_height, _pos.y + m_remTimeStatic->GetWndSize().y);
         SetHeight(_height);
+
+        LPCSTR rem_time = "";
+        if (pSettings->line_exist("engine_callbacks", "ui_task_time_remaning"))
+        {
+            const std::string func_name = pSettings->r_string("engine_callbacks", "ui_task_time_remaning");
+            if (luabind::functor<LPCSTR> func; ai().script_engine().functor(func_name.c_str(), func))
+                rem_time = func(GameTask()->Objective(1).description.c_str());
+        }
+        m_remTimeStatic->SetText(rem_time);
     }
 }
 
@@ -143,14 +153,6 @@ void CUITaskRootItem::Update()
     }
 
     m_switchDescriptionBtn->SetButtonMode(m_EventsWnd->GetDescriptionMode() ? CUIButton::BUTTON_NORMAL : CUIButton::BUTTON_PUSHED);
-
-    if (m_remTimeStatic->IsShown())
-    {
-        string512 buff, buff2;
-        InventoryUtilities::GetTimePeriodAsString(buff, sizeof(buff), Level().GetGameTime(), GameTask()->m_TimeToComplete);
-        sprintf_s(buff2, "%s %s", *CStringTable().translate("ui_st_time_remains"), buff);
-        m_remTimeStatic->SetText(buff2);
-    }
 }
 
 bool CUITaskRootItem::OnDbClick() { return true; }
@@ -202,7 +204,6 @@ void CUITaskSubItem::Init()
     m_active_color = xml_init.GetColor(uiXml, "task_sub_item:description:text_colors:active", 0, 0x00);
     m_failed_color = xml_init.GetColor(uiXml, "task_sub_item:description:text_colors:failed", 0, 0x00);
     m_accomplished_color = xml_init.GetColor(uiXml, "task_sub_item:description:text_colors:accomplished", 0, 0x00);
-    m_skiped_color = xml_init.GetColor(uiXml, "task_sub_item:description:text_colors:skiped", 0, 0x00);
 }
 
 void CUITaskSubItem::SetGameTask(CGameTask* gt, u16 obj_idx)
@@ -231,12 +232,6 @@ void CUITaskSubItem::SetGameTask(CGameTask* gt, u16 obj_idx)
         m_stateStatic->InitTexture("ui_icons_PDA_subtask_accomplished");
         m_descriptionStatic->SetTextColor(m_accomplished_color);
         break;
-    case eTaskStateSkiped:
-        m_stateStatic->InitTexture("ui_icons_PDA_subtask_skiped");
-        m_descriptionStatic->SetTextureColor(m_skiped_color);
-        break;
-
-
     default: NODEFAULT;
     };
 }

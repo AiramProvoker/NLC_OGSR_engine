@@ -7,6 +7,8 @@
 ////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "script_engine.h"
+#include "ai_space.h"
 #include "alife_simulator_base.h"
 #include "alife_simulator_header.h"
 #include "alife_time_manager.h"
@@ -257,6 +259,12 @@ void CALifeSimulatorBase::release(CSE_Abstract* abstract, bool alife_query)
         Msg("[LSS] Releasing object [%s][%s][%d][%x]", abstract->name_replace(), *abstract->s_name, abstract->ID, smart_cast<void*>(abstract));
     }
 #endif
+    {
+        luabind::functor<void> lua_function;
+        if (ai().script_engine().functor("_G.on_release_script_callback", lua_function))
+            lua_function(abstract);
+    }
+
     CSE_ALifeDynamicObject* object = objects().object(abstract->ID);
     VERIFY(object);
 

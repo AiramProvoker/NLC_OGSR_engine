@@ -77,6 +77,7 @@ public:
     int iMagazineSize2{};
     xr_vector<CCartridge> m_magazine2;
     bool m_bGrenadeMode{};
+    bool gl_sil_incompatibility{};
 
     CCartridge m_DefaultCartridge2;
 

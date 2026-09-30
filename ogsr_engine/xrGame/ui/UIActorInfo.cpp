@@ -122,16 +122,16 @@ void CUIActorInfoWnd::FillPointsInfo()
             }
             else
             {
-                s32 _totl = uiXml.ReadAttribInt("master_part", i, "show_counts", 0) ? Actor()->StatisticMgr().GetSectionCounts(itm->m_id) :
-                                                                                      Actor()->StatisticMgr().GetSectionPoints(itm->m_id);
+                const float _pts = Actor()->StatisticMgr().GetSectionPoints(itm->m_id);
+                const s32 _cnt = Actor()->StatisticMgr().GetSectionCounts(itm->m_id);
 
-                if (_totl == -1)
+                if (_pts == -1.f)
                 {
                     itm->m_text2->SetTextST("");
                 }
                 else
                 {
-                    sprintf_s(buff, "%d", _totl);
+                    sprintf_s(buff, "%d, %.1f", _cnt, _pts);
                     itm->m_text2->SetTextST(buff);
                 }
             }
@@ -230,7 +230,7 @@ void CUIActorInfoWnd::FillPointsDetail(const shared_str& id)
             sprintf_s(buff, "x%d", (*it).int_count);
             itm->m_text2->SetTextST(buff);
 
-            sprintf_s(buff, "%d", (*it).int_points);
+            sprintf_s(buff, "%.1f", (*it).f_points);
             itm->m_text3->SetTextST(buff);
         }
         else

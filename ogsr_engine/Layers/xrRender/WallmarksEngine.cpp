@@ -268,7 +268,8 @@ void CWallmarksEngine::add_static_wallmark_internal(const WallmarksEngine::wallm
     // build 3D ortho-frustum
     Fmatrix mView, mRot;
     BuildMatrix(mView, 1 / q.size, q.contact_point);
-    mRot.rotateZ(::Random.randF(deg2rad(-20.f), deg2rad(20.f)));
+    const float angle = ::Random.randF(deg2rad(-20.f), deg2rad(20.f));
+    mRot.rotateZ(ps_wm_rotfix ? 0.f : angle);
     mView.mulA_43(mRot);
     sml_clipper.CreateFromMatrix(mView, FRUSTUM_P_LRTB);
 

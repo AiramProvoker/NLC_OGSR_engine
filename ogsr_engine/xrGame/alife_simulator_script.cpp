@@ -20,6 +20,14 @@
 #include "xrServer.h"
 #include "level.h"
 #include "GameObject.h"
+#include "actor.h"
+#include "HUDManager.h"
+#include "UIGameSP.h"
+#include "alife_registry_wrappers.h"
+#include "encyclopedia_article.h"
+#include "ui/UIPdaWnd.h"
+#include "ui/UIDiaryWnd.h"
+#include "ui/UIEncyclopediaWnd.h"
 
 namespace detail
 {
@@ -396,6 +404,64 @@ LPCSTR get_loaded_save(CALifeSimulator* sim)
 bool is_unloading(CALifeSimulator* sim) { return sim->is_unloading(); }
 
 
+bool give_article(const CALifeSimulator* self, LPCSTR ar_id)
+{
+    auto& article_vector = Actor()->encyclopedia_registry->registry().objects();
+    const shared_str id = ar_id;
+    if (std::find_if(article_vector.begin(), article_vector.end(), [&id](const auto& it) { return it.article_id == id; }) != article_vector.end())
+        return false;
+
+    CEncyclopediaArticle article;
+    article.Load(id);
+    const ARTICLE_DATA::EArticleType _atype = article.data()->articleType;
+    article_vector.emplace_back(id, Level().GetGameTime(), _atype);
+
+    if (auto pGameSP = smart_cast<CUIGameSP*>(HUD().GetUI()->UIGame()))
+        pGameSP->PdaMenu->PdaContentsChanged(_atype == ARTICLE_DATA::eEncyclopediaArticle ? pda_section::encyclopedia : pda_section::journal, true, false);
+
+    return true;
+}
+
+void disable_all_articles(const CALifeSimulator* self, LPCSTR ar_id)
+{
+    Actor()->encyclopedia_registry->registry().objects().clear();
+
+    if (auto pGameSP = smart_cast<CUIGameSP*>(HUD().GetUI()->UIGame()))
+    {
+        pGameSP->PdaMenu->UIEncyclopediaWnd->ReloadArticles();
+        pGameSP->PdaMenu->UIDiaryWnd->ReloadJournal();
+    }
+}
+
+bool disable_article(const CALifeSimulator* self, LPCSTR ar_id)
+{
+    auto& article_vector = Actor()->encyclopedia_registry->registry().objects();
+    const shared_str id = ar_id;
+    const auto it = std::find_if(article_vector.begin(), article_vector.end(), [&id](const auto& it) { return it.article_id == id; });
+    if (it == article_vector.end())
+        return false;
+
+    const ARTICLE_DATA::EArticleType _atype = it->article_type;
+    article_vector.erase(it);
+
+    if (auto pGameSP = smart_cast<CUIGameSP*>(HUD().GetUI()->UIGame()))
+    {
+        if (_atype != ARTICLE_DATA::eEncyclopediaArticle)
+            pGameSP->PdaMenu->UIDiaryWnd->ReloadJournal();
+        else
+            pGameSP->PdaMenu->UIEncyclopediaWnd->ReloadArticles();
+    }
+
+    return true;
+}
+
+bool has_article(const CALifeSimulator* self, LPCSTR ar_id)
+{
+    const auto& article_vector = Actor()->encyclopedia_registry->registry().objects();
+    const shared_str id = ar_id;
+    return std::find_if(article_vector.begin(), article_vector.end(), [&id](const auto& it) { return it.article_id == id; }) != article_vector.end();
+}
+
 void CALifeSimulator::script_register(lua_State* L)
 {
     module(L)[(class_<CALifeSimulator>("alife_simulator")
@@ -426,9 +492,19 @@ void CALifeSimulator::script_register(lua_State* L)
                   .def("release", &CALifeSimulator__release)
                   .def("spawn_id", [](CALifeSimulator* self, ALife::_SPAWN_STORY_ID spawn_story_id) { return self->spawns().spawn_id(spawn_story_id); })
                   .def("spawn_id", [](CALifeSimulator* self, const char* obj_name) { return self->spawns().spawn_id(obj_name); })
+                  .def("iterate_spawn_names",
+                       [](CALifeSimulator* self, const luabind::functor<bool>& functor) {
+                           for (const auto& [name, id] : self->spawns().spawn_ids_by_name())
+                               if (functor(name.c_str(), id))
+                                   break;
+                       })
                   .def("actor", &get_actor)
                   .def("has_info", &has_info)
                   .def("dont_has_info", &dont_has_info)
+                  .def("give_article", &give_article)
+                  .def("disable_article", &disable_article)
+                  .def("disable_all_articles", &disable_all_articles)
+                  .def("has_article", &has_article)
                   .def("switch_distance", &CALifeSimulator::switch_distance)
                   .def("set_switch_distance", &CALifeSimulator::set_switch_distance)
                   .def("teleport_object", &FAKE_CALifeSimulator__teleport_object)

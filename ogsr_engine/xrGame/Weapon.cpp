@@ -13,6 +13,7 @@
 #include "xrserver_objects_alife_items.h"
 
 #include "actor.h"
+#include "ActorCondition.h"
 #include "actoreffector.h"
 #include "level.h"
 
@@ -343,6 +344,7 @@ void CWeapon::Load(LPCSTR section)
 
     m_bZoomEnabled = !!pSettings->r_bool(section, "zoom_enabled");
     m_bUseScopeZoom = !!READ_IF_EXISTS(pSettings, r_bool, section, "use_scope_zoom", false);
+    m_disableDetector = !!READ_IF_EXISTS(pSettings, r_bool, section, "disable_detector", false);
     m_bUseScopeGrenadeZoom = !!READ_IF_EXISTS(pSettings, r_bool, section, "use_scope_grenade_zoom", false);
     m_bScopeShowIndicators = !!READ_IF_EXISTS(pSettings, r_bool, section, "scope_show_indicators", true);
     m_bIgnoreScopeTexture = !!READ_IF_EXISTS(pSettings, r_bool, section, "ignore_scope_texture", false);
@@ -386,6 +388,8 @@ void CWeapon::Load(LPCSTR section)
         m_sSilencerName = pSettings->r_string(section, "silencer_name");
         m_iSilencerX = pSettings->r_s32(section, "silencer_x");
         m_iSilencerY = pSettings->r_s32(section, "silencer_y");
+        m_iSilencerXOffset = READ_IF_EXISTS(pSettings, r_s32, section, "silencer_x_offset", 0);
+        m_iSilencerYOffset = READ_IF_EXISTS(pSettings, r_s32, section, "silencer_y_offset", 0);
     }
 
     if (m_eGrenadeLauncherStatus == ALife::eAddonAttachable)
@@ -941,7 +945,7 @@ void CWeapon::UpdateCL()
         {
             if (psActorFlags.test(AF_DOF_ZOOM) && m_bZoomMode && dof_zoom_effect < 1.f && !UseScopeTexture() && pActor->active_cam() == ACTOR_DEFS::eacFirstEye)
                 UpdateDof(dof_zoom_effect, Is3dssEnabled() ? dof_params_reload : dof_params_zoom, false);
-            else if (dof_zoom_effect > 0.f && (!m_bZoomMode || pActor->active_cam() != ACTOR_DEFS::eacFirstEye))
+            else if (dof_zoom_effect > 0.f && (!m_bZoomMode || pActor->active_cam() != ACTOR_DEFS::eacFirstEye || is_alt_aim_enabled))
                 UpdateDof(dof_zoom_effect, Is3dssEnabled() ? dof_params_reload : dof_params_zoom, true);
 
             if (dof_reload_effect > 0.f)
@@ -1178,6 +1182,9 @@ bool CWeapon::Action(s32 cmd, u32 flags)
     }
         return true;
     case kWPN_NEXT: {
+        if (CLS_ID == TEXT2CLSID("W_SHOTGN") && iAmmoElapsed > 0)
+            return true;
+
         if (IsPending())
         {
             return false;
@@ -1217,20 +1224,20 @@ bool CWeapon::Action(s32 cmd, u32 flags)
                 if (psActorFlags.is(AF_WPN_AIM_TOGGLE) && IsZoomed())
                 {
                     OnZoomOut();
-                    if (!bPending)
+                    if (!bPending && state != eFire)
                         SwitchState(eIdle);
                 }
                 else
                 {
                     OnZoomIn();
-                    if (!bPending)
+                    if (!bPending && state != eFire)
                         SwitchState(eIdle);
                 }
             }
             else if (IsZoomed() && !psActorFlags.is(AF_WPN_AIM_TOGGLE))
             {
                 OnZoomOut();
-                if (!bPending)
+                if (!bPending && state != eFire)
                     SwitchState(eIdle);
             }
             return true;
@@ -1244,7 +1251,7 @@ bool CWeapon::Action(s32 cmd, u32 flags)
         if (IsZoomEnabled() && IsZoomed() && m_bScopeDynamicZoom && IsScopeAttached() && (flags & CMD_START))
         {
             // если в режиме ПГ - не будем давать использовать динамический зум
-            if (IsGrenadeMode())
+            if (IsGrenadeMode() || is_alt_aim_enabled)
                 return false;
 
             ZoomChange(cmd == kWPN_ZOOM_INC);
@@ -1253,6 +1260,15 @@ bool CWeapon::Action(s32 cmd, u32 flags)
         }
         else
             return false;
+    }
+    case kWPN_ALT_AIM: {
+        if ((flags & CMD_START) && !IsPending() && m_bUseAltAimZoom && !IsGrenadeMode())
+        {
+            is_alt_aim_enabled = !is_alt_aim_enabled;
+            OnZoomOut();
+            OnZoomIn();
+        }
+        return true;
     }
     }
     return false;
@@ -1271,7 +1287,7 @@ void CWeapon::ZoomChange(bool inc)
 {
     bool wasChanged = false;
 
-    if (Is3dssEnabled())
+    if (Is3dssEnabled() && !m_3dss_gen_zoom_enable)
     {
 // Simp: переменную кратность в новых прицелах сделал на скриптах, мб в будущем верну в двиг, но пока так.
         return;
@@ -1419,8 +1435,17 @@ float CWeapon::GetConditionMisfireProbability() const
 
 BOOL CWeapon::CheckForMisfire()
 {
-    if (!smart_cast<CActor*>(H_Parent())) // KRodin: НПС не нужны осечки.
+    auto actor = smart_cast<CActor*>(H_Parent());
+    if (!actor) // KRodin: НПС не нужны осечки.
         return FALSE;
+
+    if (actor->conditions().getForceNextJam())
+    {
+        actor->conditions().setForceNextJam(false);
+        FireEnd();
+        SwitchMisfire(true);
+        return TRUE;
+    }
 
     float rnd = ::Random.randF(0.f, 1.f);
     float mp = GetConditionMisfireProbability();
@@ -1648,7 +1673,9 @@ void CWeapon::InitAddons() {}
 
 float CWeapon::CurrentZoomFactor()
 {
-    if (Is3dssEnabled())
+    if (is_alt_aim_enabled)
+        return m_fIronSightZoomFactor;
+    if (Is3dssEnabled() && !m_3dss_gen_zoom_enable)
         return Core.Features.test(xrCore::Feature::ogse_wpn_zoom_system) ? 1.0f : m_fIronSightZoomFactor; // no change to main fov zoom when use second vp
     else if (IsScopeAttached())
         return m_fScopeZoomFactor;
@@ -1661,7 +1688,7 @@ void CWeapon::OnZoomIn()
     m_bZoomMode = true;
 
     // если в режиме ПГ - не будем давать включать динамический зум
-    if (m_bScopeDynamicZoom && !IsGrenadeMode() && !Is3dssEnabled())
+    if (m_bScopeDynamicZoom && !IsGrenadeMode() && !(Is3dssEnabled() && !m_3dss_gen_zoom_enable) && !is_alt_aim_enabled)
         m_fZoomFactor = m_fRTZoomFactor;
     else
         m_fZoomFactor = CurrentZoomFactor();
@@ -1704,7 +1731,7 @@ void CWeapon::OnZoomOut()
 
 bool CWeapon::UseScopeTexture()
 {
-    return !Is3dssEnabled() && m_UIScope; // только если есть текстура прицела - для простого создания коллиматоров
+    return !Is3dssEnabled() && m_UIScope && !is_alt_aim_enabled; // только если есть текстура прицела - для простого создания коллиматоров
 }
 
 void CWeapon::SwitchState(u32 S)
@@ -1875,6 +1902,8 @@ u8 CWeapon::GetCurrentHudOffsetIdx() const
             else
                 return hud_item_measures::m_hands_offset_type_gl;
         }
+        else if (is_alt_aim_enabled)
+            return hud_item_measures::m_hands_offset_type_aim_alt;
         else if (has_gl)
         {
             if (m_bUseScopeZoom && has_scope)
@@ -2076,7 +2105,7 @@ const float& CWeapon::hit_probability() const
 bool CWeapon::Is3dssEnabled() const
 {
     const auto& zoom_params = shader_exports.get_custom_params("s3ds_param_2");
-    return !fis_zero(zoom_params.w) && !IsGrenadeMode() && psActorFlags.test(AF_3D_SCOPES);
+    return !fis_zero(zoom_params.w) && !IsGrenadeMode() && psActorFlags.test(AF_3D_SCOPES) && !is_alt_aim_enabled;
 }
 
 // Чувствительность мышки с оружием в руках во время прицеливания
@@ -2259,3 +2288,42 @@ void CWeapon::on_a_hud_attach()
 }
 
 void CWeapon::on_b_hud_detach() { inherited::on_b_hud_detach(); }
+
+void CWeapon::CheckHaveAmmo()
+{
+    LPCSTR sect = cNameSect().c_str();
+    if (!H_Parent() || strstr(sect, "_knife") || strstr(sect, "_binoc"))
+        return;
+
+    const u16 parent_id = H_Parent()->ID();
+    if (!parent_id || m_ammoType >= m_ammoTypes.size())
+        return;
+
+    if (m_pCurrentInventory)
+    {
+        LPCSTR ammo_sect = m_ammoTypes[m_ammoType].c_str();
+        if (m_pCurrentInventory->Get(ammo_sect, false) || m_pCurrentInventory->Get(ammo_sect, true))
+            return;
+    }
+
+    SpawnAmmo(u32(-1), m_ammoTypes[m_ammoType].c_str(), parent_id);
+}
+
+void CWeapon::ReloadNextAmmo(u32 next_ammo_type)
+{
+    ASSERT_FMT(next_ammo_type < m_ammoTypes.size(), "[%s]: wrong next_ammoType[%u] >= m_ammoTypes[%u]", __FUNCTION__, next_ammo_type, m_ammoTypes.size());
+
+    if (!unlimited_ammo())
+    {
+        LPCSTR ammo_sect = m_ammoTypes[next_ammo_type].c_str();
+        bool found;
+        if (ParentIsActor() && psActorFlags.test(AF_AMMO_ON_BELT))
+            found = !!m_pCurrentInventory->Get(ammo_sect, false);
+        else
+            found = m_pCurrentInventory->Get(ammo_sect, false) || m_pCurrentInventory->Get(ammo_sect, true);
+        ASSERT_FMT(found, "[%s]: ammo of next_ammoType[%u] not found", __FUNCTION__, next_ammo_type);
+    }
+
+    m_set_next_ammoType_on_reload = next_ammo_type;
+    Reload();
+}

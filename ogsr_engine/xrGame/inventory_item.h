@@ -139,7 +139,6 @@ public:
     u32 m_cost;
     float m_weight;
     shared_str m_Description;
-    CUIInventoryCellItem* m_cell_item;
 
     shared_str m_name;
     shared_str m_nameShort;
@@ -189,7 +188,7 @@ public:
     bool RuckDefault() { return !!m_flags.test(FRuckDefault); }
 
     virtual bool CanTake() const { return !!m_flags.test(FCanTake); }
-    bool CanTrade() const;
+    bool CanTrade(bool check_listed = false) const;
     virtual bool IsNecessaryItem(CInventoryItem* item);
     virtual bool IsNecessaryItem(const shared_str& item_sect) { return false; };
 
@@ -237,7 +236,7 @@ public:
     virtual DLL_Pure* _construct();
     IC CPhysicsShellHolder& object() const
     {
-        VERIFY(m_object);
+        R_ASSERT(m_object);
         return (*m_object);
     }
     IC CPhysicsShellHolder* p_object() const

@@ -7,8 +7,14 @@ void CFileStreamReader::construct(LPCSTR file_name, const size_t& window_size)
 
     VERIFY(m_file_handle != INVALID_HANDLE_VALUE);
 
-    LARGE_INTEGER sz;
-    GetFileSizeEx(m_file_handle, &sz);
+    LARGE_INTEGER sz{};
+    if (!GetFileSizeEx(m_file_handle, &sz))
+    {
+        Msg("CFileStreamReader::construct - GetFileSizeEx failed for '%s', error=%u", file_name, GetLastError());
+        CloseHandle(m_file_handle);
+        m_file_handle = INVALID_HANDLE_VALUE;
+        R_ASSERT2(false, "GetFileSizeEx failed");
+    }
     size_t file_size = sz.QuadPart;
 
     HANDLE file_mapping_handle = CreateFileMapping(m_file_handle, nullptr, PAGE_READONLY, 0, 0, nullptr);

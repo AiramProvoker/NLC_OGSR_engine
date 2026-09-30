@@ -306,8 +306,7 @@ private:
     // Berserk
     //--------------------------------------------------------------------
 public:
-    u32 time_berserk_start;
-    IC void set_berserk() { time_berserk_start = time(); }
+    bool script_berserk{};
     bool berserk_always;
 
     //--------------------------------------------------------------------
@@ -517,6 +516,17 @@ public:
     float get_radiation_influence();
     float get_fire_influence();
     void play_detector_sound();
+
+    enum EAuraType
+    {
+        eAuraTypeBase = 0,
+        eAuraTypePsy,
+        eAuraTypeFire,
+        eAuraTypeRad,
+    };
+
+    void enable_aura(EAuraType aura_type, bool enable);
+    bool is_aura_enabled(EAuraType aura_type);
 
 private:
     monster_aura m_psy_aura;

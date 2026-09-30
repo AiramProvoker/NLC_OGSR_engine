@@ -205,6 +205,10 @@ bool CUISequenceVideoItem::Stop(bool bForce)
     if (!m_flags.test(etiCanBeStopped) && !bForce && IsPlaying())
         return false;
 
+    const u32 unskippable_time = READ_IF_EXISTS(pSettings, r_u32, "tutorial_video_opt", "unskippable_time", 0);
+    if (Device.dwTimeContinual - m_time_start < unskippable_time)
+        return false;
+
     m_flags.set(etiPlaying, FALSE);
 
     m_wnd->Show(false);

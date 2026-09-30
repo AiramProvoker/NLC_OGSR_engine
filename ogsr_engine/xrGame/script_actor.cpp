@@ -143,6 +143,8 @@ void CScriptActor::script_register(lua_State* L)
                .property("health_restore_v", &get_change_v<&SConditionChangeV::m_fV_HealthRestore>, &set_change_v<&SConditionChangeV::m_fV_HealthRestore>)
                .def("get_wound_size", &get_wound_size)
                .def("get_wound_total_size", &get_wound_total_size)
+               .def("get_force_next_jam", &CActorCondition::getForceNextJam)
+               .def("set_force_next_jam", &CActorCondition::setForceNextJam)
            //.property("class_name",						&get_lua_class_name)
            ,
            class_<CActorConditionObject, bases<CActorCondition, CEntityCondition>>("CActorCondition") // нормальное наследование свойств происходит через Ж (
@@ -177,6 +179,8 @@ void CScriptActor::script_register(lua_State* L)
                .def_readwrite("disp_accel_factor", &CActor::m_fDispAccelFactor)
                .def_readwrite("disp_crouch_factor", &CActor::m_fDispCrouchFactor)
                .def_readwrite("disp_crouch_no_acc_factor", &CActor::m_fDispCrouchNoAccelFactor)
+               .def_readwrite("sh_mask_condition", &CActor::m_sh_mask_condition)
+               .def_readwrite("can_switch_nv", &CActor::can_switch_nv)
 
                .property("movement", &get_movement)
                .property("jump_speed", &get_jump_speed, &set_jump_speed)

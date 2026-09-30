@@ -56,6 +56,12 @@ public:
     IC bool enabled(_action_type type, const shared_str& section) const;
 
     template <typename _action_type>
+    IC bool listed(_action_type type, const shared_str& section) const
+    {
+        return action(type).listed(section);
+    }
+
+    template <typename _action_type>
     IC const CTradeFactors& factors(_action_type type, const shared_str& section) const;
 
     template <typename _action_type>

@@ -238,6 +238,13 @@ SERVER_ENTITY_DECLARE_END
 add_to_type_list(CSE_ALifeItemDocument)
 #define script_type_list save_type_list(CSE_ALifeItemDocument)
 
+    SERVER_ENTITY_DECLARE_BEGIN(CSE_ALifeItemEatable, CSE_ALifeItem) int m_portions_num;
+CSE_ALifeItemEatable(LPCSTR caSection);
+virtual ~CSE_ALifeItemEatable();
+SERVER_ENTITY_DECLARE_END
+add_to_type_list(CSE_ALifeItemEatable)
+#define script_type_list save_type_list(CSE_ALifeItemEatable)
+
     SERVER_ENTITY_DECLARE_BEGIN(CSE_ALifeItemGrenade, CSE_ALifeItem) u32 m_ef_weapon_type;
 CSE_ALifeItemGrenade(LPCSTR caSection);
 virtual ~CSE_ALifeItemGrenade();

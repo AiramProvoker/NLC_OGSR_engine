@@ -99,7 +99,23 @@ void CUIArtefactParams::SetInfo(const shared_str& af_section)
             continue;
 
         float _val;
-        if (i == _item_additional_inventory_weight)
+        if (i == _item_satiety_restore_speed)
+        {
+            _val = READ_IF_EXISTS(pSettings, r_float, af_section, af_item_sect_names[i], 0.f);
+            if (fis_zero(_val))
+                continue;
+            _val *= 22446.689f;
+
+            string64 units;
+            xr_sprintf(units, " %s", CStringTable().translate("ui_inv_units").c_str());
+            sprintf_s(_buff, "%s %s %+.2f%s", CStringTable().translate(af_item_param_names[i]).c_str(), (_val > 0) ? "%c[green]" : "%c[red]", _val, units);
+            _s->SetText(_buff);
+            _s->SetWndPos(_s->GetWndPos().x, _h);
+            _h += _s->GetWndSize().y;
+            AttachChild(_s);
+            continue;
+        }
+        else if (i == _item_additional_inventory_weight)
         {
             _val = READ_IF_EXISTS(pSettings, r_float, af_section, af_item_sect_names[i], 0.f);
             if (fis_zero(_val))

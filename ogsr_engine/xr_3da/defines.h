@@ -47,8 +47,10 @@ enum
     //rsR4 = (1ul << 18ul),
     rsExclusiveMode = 1ul << 19ul,
     rsOcclusionDraw = 1ul << 20ul,
+    rsDisableCamInert = 1ul << 21ul,
 };
 
 //. ENGINE_API extern	u32			psCurrentMode		;
 ENGINE_API extern u32 psCurrentVidMode[];
 ENGINE_API extern Flags32 psDeviceFlags;
+ENGINE_API extern int ps_wm_rotfix;

@@ -22,6 +22,7 @@ public:
     IC void clear();
     IC void enable(const shared_str& section, const CTradeFactors& trade_factors);
     IC bool enabled(const shared_str& section) const;
+    IC bool listed(const shared_str& section) const { return m_enabled.listed(section); }
     IC bool disabled(const shared_str& section) const;
     IC const CTradeFactors& factors(const shared_str& section) const;
     IC const CTradeFactors& default_factors() const;

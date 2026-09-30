@@ -1,9 +1,11 @@
 #include "stdafx.h"
+#include "fl_hook.h"
 #include "weaponmagazinedwgrenade.h"
 #include "HUDManager.h"
 #include "entity.h"
 #include "ParticlesObject.h"
 #include "GrenadeLauncher.h"
+#include "Silencer.h"
 #include "xrserver_objects_alife_items.h"
 #include "ExplosiveRocket.h"
 #include "Actor_Flags.h"
@@ -70,6 +72,8 @@ void CWeaponMagazinedWGrenade::Load(LPCSTR section)
     }
 
     grenade_bone_name = READ_IF_EXISTS(pSettings, r_string, hud_sect, "grenade_bone", grenade_launcher_def_bone_cop);
+
+    gl_sil_incompatibility = !!READ_IF_EXISTS(pSettings, r_bool, section, "gl_sil_incompatibility", false);
 
     // load ammo classes SECOND (grenade_class)
     m_ammoTypes2.clear();
@@ -177,6 +181,9 @@ void CWeaponMagazinedWGrenade::switch2_Reload()
 
 void CWeaponMagazinedWGrenade::OnShot()
 {
+    if (m_bGrenadeMode)
+        fl_hook::weapon_before_fire(this, true);
+
     if (m_bGrenadeMode)
     {
         PlaySound(sndShotG, get_LastFP2(), true);
@@ -499,6 +506,14 @@ void CWeaponMagazinedWGrenade::OnH_B_Independent(bool just_before_destroy)
 bool CWeaponMagazinedWGrenade::CanAttach(PIItem pIItem)
 {
     CGrenadeLauncher* pGrenadeLauncher = smart_cast<CGrenadeLauncher*>(pIItem);
+
+    if (gl_sil_incompatibility)
+    {
+        if (smart_cast<CSilencer*>(pIItem) && (m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonGrenadeLauncher))
+            return false;
+        if (pGrenadeLauncher && (m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonSilencer))
+            return false;
+    }
 
     if (pGrenadeLauncher && CSE_ALifeItemWeapon::eAddonAttachable == m_eGrenadeLauncherStatus && 0 == (m_flagsAddOnState & CSE_ALifeItemWeapon::eWeaponAddonGrenadeLauncher) &&
         !xr_strcmp(*m_sGrenadeLauncherName, pIItem->object().cNameSect()))
@@ -823,16 +838,21 @@ void CWeaponMagazinedWGrenade::PlayAnimShoot()
     if (m_bGrenadeMode)
     {
         //анимация стрельбы из подствольника
-        string128 guns_shoot_anm;
-        xr_strconcat(guns_shoot_anm, "anm_shoot", (IsZoomed() && !IsRotatingToZoom()) ? "_aim" : "", IsMisfire() ? "_jammed" : (iAmmoElapsed2 == 0 ? "_empty" : ""), "_g");
-        PlayHUDMotion({guns_shoot_anm, "anim_shoot_g", "anm_shots_g"}, IS_OGSR_GA, GetState());
+        shared_str guns_shoot_anm = "anm_shoot";
+        AddSuffixName(guns_shoot_anm, (IsZoomed() && !IsRotatingToZoom()) ? "_aim" : "");
+        AddSuffixName(guns_shoot_anm, IsMisfire() ? "_jammed" : (iAmmoElapsed2 == 0 ? "_empty" : ""));
+        AddSuffixName(guns_shoot_anm, "_g");
+        PlayHUDMotion({guns_shoot_anm.c_str(), "anim_shoot_g", "anm_shots_g"}, IS_OGSR_GA, GetState());
     }
     else if (IsGrenadeLauncherAttached())
     {
-        string128 guns_shoot_anm;
-        xr_strconcat(guns_shoot_anm, "anm_shoot", (IsZoomed() && !IsRotatingToZoom()) ? (IsScopeAttached() ? "_aim_scope" : "_aim") : "",
-                     IsMisfire() ? "_jammed" : (iAmmoElapsed == 1 ? "_last" : ""), IsSilencerAttached() ? "_sil" : "", "_w_gl");
-        PlayHUDMotion({guns_shoot_anm, "anim_shoot_gl", "anm_shots_w_gl"}, IS_OGSR_GA, GetState());
+        shared_str guns_shoot_anm = "anm_shoot";
+        if (IsZoomed() && !IsRotatingToZoom())
+            AddSuffixName(guns_shoot_anm, IsScopeAttached() ? "_aim_scope" : "_aim");
+        AddSuffixName(guns_shoot_anm, IsMisfire() ? "_jammed" : (iAmmoElapsed == 1 ? "_last" : ""));
+        AddSuffixName(guns_shoot_anm, IsSilencerAttached() ? "_sil" : "");
+        AddSuffixName(guns_shoot_anm, "_w_gl");
+        PlayHUDMotion({guns_shoot_anm.c_str(), "anim_shoot_gl", "anm_shots_w_gl"}, IS_OGSR_GA, GetState());
     }
     else
         inherited::PlayAnimShoot();

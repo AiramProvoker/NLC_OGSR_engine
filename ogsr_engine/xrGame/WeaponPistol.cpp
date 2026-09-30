@@ -170,13 +170,14 @@ void CWeaponPistol::PlayAnimHide()
 
 void CWeaponPistol::PlayAnimShoot()
 {
-    string128 guns_shoot_anm;
-    xr_strconcat(guns_shoot_anm, "anm_shoot", (this->IsZoomed() && !this->IsRotatingToZoom()) ? "_aim" : "", iAmmoElapsed == 1 ? "_last" : "",
-                 this->IsSilencerAttached() ? "_sil" : "");
+    shared_str guns_shoot_anm = "anm_shoot";
+    AddSuffixName(guns_shoot_anm, (this->IsZoomed() && !this->IsRotatingToZoom()) ? "_aim" : "");
+    AddSuffixName(guns_shoot_anm, iAmmoElapsed == 1 ? "_last" : "");
+    AddSuffixName(guns_shoot_anm, this->IsSilencerAttached() ? "_sil" : "");
 
-    if (AnimationExist(guns_shoot_anm))
+    if (AnimationExist(guns_shoot_anm.c_str()))
     {
-        PlayHUDMotion(guns_shoot_anm, IS_OGSR_GA, GetState());
+        PlayHUDMotion(guns_shoot_anm.c_str(), IS_OGSR_GA, GetState());
         m_opened = iAmmoElapsed < 2;
         return;
     }

@@ -16,6 +16,11 @@ private:
     CPhysicItem* m_physic_item;
 
 public:
+    bool use_for_every_item{};
+    bool eat_portions_influence{};
+    bool disable_use{};
+
+public:
     CEatableItem();
     virtual ~CEatableItem();
     virtual DLL_Pure* _construct();
@@ -25,6 +30,7 @@ public:
     virtual bool Useful() const;
 
     virtual BOOL net_Spawn(CSE_Abstract* DC);
+    virtual void net_Export(CSE_Abstract* E);
 
     virtual void OnH_B_Independent(bool just_before_destroy);
     virtual void UseBy(CEntityAlive* npc);

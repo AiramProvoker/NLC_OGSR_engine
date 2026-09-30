@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "script_engine.h"
 #include "xrServer_Objects_ALife_All.h"
 #include "level.h"
 #include "game_cl_base.h"
@@ -107,6 +108,12 @@ extern Flags32 psAI_Flags;
 
 void CLevel::g_sv_Spawn(CSE_Abstract* E)
 {
+    {
+        luabind::functor<void> lua_function;
+        if (ai().script_engine().functor("_G.on_client_spawn_callback", lua_function))
+            lua_function(E);
+    }
+
     //-----------------------------------------------------------------
     //	CTimer		T(false);
 

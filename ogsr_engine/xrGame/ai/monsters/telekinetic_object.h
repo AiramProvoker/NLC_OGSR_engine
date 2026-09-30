@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../../../COMMON_AI/script_export_space.h"
+
 enum ETelekineticState
 {
     TS_None,
@@ -42,6 +44,7 @@ public:
     ~CTelekineticObject();
 
     virtual bool init(CTelekinesis* tele, CPhysicsShellHolder* obj, float s, float h, u32 ttk, bool rot = true);
+    virtual bool init_by_id(u16 id, float s, float h, u32 ttk, bool rot = true);
     void set_sound(const ref_sound& snd_hold, const ref_sound& snd_throw);
 
     virtual void raise(float step);
@@ -75,4 +78,10 @@ public:
 
 private:
     void update_hold_sound();
+
+public:
+    DECLARE_SCRIPT_REGISTER_FUNCTION
 };
+add_to_type_list(CTelekineticObject)
+#undef script_type_list
+#define script_type_list save_type_list(CTelekineticObject)

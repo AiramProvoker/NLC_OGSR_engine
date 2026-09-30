@@ -163,6 +163,18 @@ CInifile::~CInifile()
     DATA.clear();
 }
 
+void CInifile::release()
+{
+    xr_free(fName);
+
+    Ordered_DATA.clear();
+
+    for (auto& I : DATA)
+        xr_delete(I.second);
+
+    DATA.clear();
+}
+
 void insert_item(CInifile::Sect* tgt, const CInifile::Item& I)
 {
     auto sect_it = tgt->Data.find(I.first);

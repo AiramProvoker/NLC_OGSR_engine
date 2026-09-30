@@ -81,6 +81,7 @@ protected:
     CUIStatic UIBagWnd;
     CUIStatic UIMoneyWnd;
     CUIStatic UIDescrWnd;
+    CUIStatic UIAccumStatic;
     CUIFrameWindow UIPersonalWnd;
 
     CUI3tButton* UIExitButton;
@@ -104,6 +105,10 @@ protected:
     CUIDragDropListEx* m_pUINightVisionList;
     CUIDragDropListEx* m_pUIDetectorList;
     CUIDragDropListEx* m_pUITorchList;
+    CUIDragDropListEx* m_pUISlotQuickAccessList_0;
+    CUIDragDropListEx* m_pUISlotQuickAccessList_1;
+    CUIDragDropListEx* m_pUISlotQuickAccessList_2;
+    CUIDragDropListEx* m_pUISlotQuickAccessList_3;
     CUIDragDropListEx* m_pUIBinocularList;
 
     // alpet: для индексированного доступа
@@ -142,6 +147,7 @@ public:
 protected:
     bool DropItem(PIItem itm, CUIDragDropListEx* lst);
     bool TryUseItem(PIItem itm);
+    bool AllowPutInSlot(CUICellItem* itm, u8 slot);
     //----------------------	-----------------------------------------------
     void SendEvent_Item2Slot(PIItem pItem);
     void SendEvent_Item2Belt(PIItem pItem);

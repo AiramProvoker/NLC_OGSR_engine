@@ -18,7 +18,8 @@ void SStatDetailBData::save(IWriter& stream)
 {
     save_data(key, stream);
     save_data(int_count, stream);
-    save_data(int_points, stream);
+    s32 pts = iFloor(f_points * 10000.f);
+    save_data(pts, stream);
     save_data(str_value, stream);
 }
 
@@ -26,7 +27,9 @@ void SStatDetailBData::load(IReader& stream)
 {
     load_data(key, stream);
     load_data(int_count, stream);
-    load_data(int_points, stream);
+    s32 pts = 0;
+    load_data(pts, stream);
+    f_points = float(pts) * 0.0001f;
 
     if (ai().get_alife()->header().version() > 0x0002)
         load_data(str_value, stream);
@@ -76,21 +79,21 @@ SStatDetailBData& SStatSectionData::GetData(const shared_str& key)
     data.resize(data.size() + 1);
     data.back().key = key;
     data.back().int_count = 0;
-    data.back().int_points = 0;
+    data.back().f_points = 0.f;
     return data.back();
 }
 
-s32 SStatSectionData::GetTotalPoints() const
+float SStatSectionData::GetTotalPoints() const
 {
-    s32 res = 0;
+    float res = 0.f;
     vStatDetailData::const_iterator it = data.begin();
     vStatDetailData::const_iterator it_e = data.end();
     for (; it != it_e; ++it)
     {
         if ((*it).str_value.size() != 0)
-            return -1;
+            return -1.f;
 
-        res += /*(*it).int_count**/ (*it).int_points;
+        res += /*(*it).int_count**/ (*it).f_points;
     }
     return res;
 }
@@ -146,32 +149,32 @@ void CActorStatisticMgr::AddPoints(const shared_str& key, const shared_str& deta
     d.str_value = str_value;
 }
 
-void CActorStatisticMgr::AddPoints(const shared_str& key, const shared_str& detail_key, s32 cnt, s32 pts)
+void CActorStatisticMgr::AddPoints(const shared_str& key, const shared_str& detail_key, s32 cnt, float pts)
 {
     SStatSectionData& sect = GetSection(key);
     SStatDetailBData& d = sect.GetData(detail_key);
     d.int_count += cnt;
-    d.int_points += cnt * pts;
+    d.f_points += float(cnt) * pts;
 }
 
-s32 CActorStatisticMgr::GetSectionPoints(const shared_str& key)
+float CActorStatisticMgr::GetSectionPoints(const shared_str& key)
 {
     if (key != "total")
         return GetSection(key).GetTotalPoints();
     else
     { // total
-        s32 _total = -1;
+        float _total = -1.f;
         vStatSectionData& d = GetStorage();
         vStatSectionData::iterator it = d.begin();
         vStatSectionData::iterator it_e = d.end();
         for (; it != it_e; ++it)
         {
-            s32 _p = (*it).GetTotalPoints();
+            float _p = (*it).GetTotalPoints();
 
-            if (_p != -1)
+            if (_p != -1.f)
             {
-                if (_total == -1)
-                    _total = 0;
+                if (_total == -1.f)
+                    _total = 0.f;
 
                 _total += _p;
             }

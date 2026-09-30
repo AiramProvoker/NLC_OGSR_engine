@@ -21,8 +21,10 @@ public:
     virtual void OnBtnUpClick();
     virtual void OnBtnDownClick();
 
-    void SetMax(int max) { m_iMax = max; };
-    void SetMin(int min) { m_iMin = min; };
+    void SetMax(int max);
+    void SetMin(int min);
+    void SetVal(int val);
+    void SetReverse(bool b) { can_reverse = b; }
     int Value() const { return m_iVal; }
 
 protected:
@@ -36,6 +38,7 @@ protected:
     int m_iMin;
     int m_iStep;
     int m_iVal;
+    bool can_reverse{};
 };
 
 class CUISpinFlt : public CUICustomSpin

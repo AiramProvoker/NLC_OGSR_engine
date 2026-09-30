@@ -122,6 +122,8 @@ void CTorch::script_register(lua_State* L)
                   .def_readonly("nvd_on", &CTorch::m_bNightVisionOn)
                   .def("enable_nvd", (void(CTorch::*)(bool))(&CTorch::SwitchNightVision))
                   .def("switch_nvd", (void(CTorch::*)())(&CTorch::SwitchNightVision))
+                  .def_readwrite("disable_switch", &CTorch::m_disable_switch)
+                  .def_readwrite("switch_mode", &CTorch::switch_mode)
 
                   ,
               def("get_torch_obj", [](CScriptGameObject* script_obj) { return smart_cast<CTorch*>(&script_obj->object()); }))];

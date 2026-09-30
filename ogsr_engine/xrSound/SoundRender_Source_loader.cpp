@@ -94,8 +94,28 @@ void CSoundRender_Source::LoadWave(LPCSTR pName)
     dwBytesTotal = u32(pcm_total * m_wformat.nBlockAlign);
     fTimeTotal = s_f_def_source_footer + dwBytesTotal / float(m_wformat.nAvgBytesPerSec);
 
+    bool ini_params = false;
+    {
+        xr_string sound_file_sec = fname.c_str();
+        std::replace(sound_file_sec.begin(), sound_file_sec.end(), '\\', '.');
+        if (pSettings->section_exist(sound_file_sec.c_str()))
+        {
+            if (pSettings->line_exist(sound_file_sec.c_str(), "min_dist"))
+                m_fMinDist = (float)atof(pSettings->r_string(sound_file_sec.c_str(), "min_dist"));
+            if (pSettings->line_exist(sound_file_sec.c_str(), "max_dist"))
+                m_fMaxDist = (float)atof(pSettings->r_string(sound_file_sec.c_str(), "max_dist"));
+            if (pSettings->line_exist(sound_file_sec.c_str(), "volume"))
+                m_fBaseVolume = (float)atof(pSettings->r_string(sound_file_sec.c_str(), "volume"));
+            if (pSettings->line_exist(sound_file_sec.c_str(), "type"))
+                m_uGameType = atol(pSettings->r_string(sound_file_sec.c_str(), "type"));
+            if (pSettings->line_exist(sound_file_sec.c_str(), "ai_dist"))
+                m_fMaxAIDist = (float)atof(pSettings->r_string(sound_file_sec.c_str(), "ai_dist"));
+            ini_params = true;
+        }
+    }
+
     vorbis_comment* ovm = ov_comment(&ovf, -1);
-    if (ovm->comments)
+    if (ovm->comments && !ini_params)
     {
         IReader F(ovm->user_comments[0], ovm->comment_lengths[0]);
 

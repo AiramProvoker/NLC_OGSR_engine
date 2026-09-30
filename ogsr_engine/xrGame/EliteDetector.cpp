@@ -210,6 +210,12 @@ void CScientificDetector::UpfateWork()
 {
     ui().Clear();
 
+    if (GetCondition() <= 0.01f)
+    {
+        m_ui->update();
+        return;
+    }
+
     auto ait_b = m_artefacts.m_ItemInfos.begin();
     auto ait_e = m_artefacts.m_ItemInfos.end();
     auto ait = ait_b;

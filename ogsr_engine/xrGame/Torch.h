@@ -37,6 +37,10 @@ private:
     bool useVolumetric{}, useVolumetricForActor{};
 
 public:
+    bool m_disable_switch{};
+    bool switch_mode{};
+
+public:
     CTorch(void);
     virtual ~CTorch(void);
 

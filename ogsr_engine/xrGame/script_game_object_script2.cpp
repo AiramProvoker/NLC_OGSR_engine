@@ -7,6 +7,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "fl_hook.h"
 #include "script_game_object.h"
 #include "alife_space.h"
 #include "script_entity_space.h"
@@ -38,7 +39,9 @@ extern CScriptActionPlanner* script_action_planner(CScriptGameObject* obj);
 
 class_<CScriptGameObject> script_register_game_object1(class_<CScriptGameObject>&& instance)
 {
+    fl_hook::set_cost_registered();
     return std::move(instance)
+        .def("set_cost", &fl_hook::set_cost)
         .enum_("relation")[(value("friend", int(ALife::eRelationTypeFriend)), value("neutral", int(ALife::eRelationTypeNeutral)), value("enemy", int(ALife::eRelationTypeEnemy)),
                            value("worst_enemy", int(ALife::eRelationTypeWorstEnemy)), value("dummy", int(ALife::eRelationTypeDummy)))]
         .enum_("action_types")[(value("movement", int(ScriptEntity::eActionTypeMovement)), value("watch", int(ScriptEntity::eActionTypeWatch)),
@@ -66,7 +69,7 @@ class_<CScriptGameObject> script_register_game_object1(class_<CScriptGameObject>
         // Actor State
         //.property("jump_speed",				&CScriptGameObject::GetActorJumpSpeed,	&CScriptGameObject::SetActorJumpSpeed)
         //.property("walk_accel",				&CScriptGameObject::GetActorWalkAccel,	&CScriptGameObject::SetActorWalkAccel)
-        .property("exo_factor", &CScriptGameObject::GetActorExoFactor, &CScriptGameObject::SetActorExoFactor)
+        .property("speed_multiplier", &CScriptGameObject::GetMovementSpeedMultiplier, &CScriptGameObject::SetMovementSpeedMultiplier)
 
         // Other
         .def("get_bleeding", &CScriptGameObject::GetBleeding)
@@ -77,6 +80,7 @@ class_<CScriptGameObject> script_register_game_object1(class_<CScriptGameObject>
         .def("id", &CScriptGameObject::ID)
         .def("story_id", &CScriptGameObject::story_id)
         .def("section", &CScriptGameObject::Section)
+        .def("set_section", &CScriptGameObject::SetSection)
         .def("name", &CScriptGameObject::Name)
         .def("parent", &CScriptGameObject::Parent)
         .def("mass", &CScriptGameObject::Mass)
@@ -199,6 +203,7 @@ class_<CScriptGameObject> script_register_game_object1(class_<CScriptGameObject>
         .def("at_home", (bool(CScriptGameObject::*)(Fvector))(&CScriptGameObject::at_home))
         .def("remove_home", &CScriptGameObject::remove_home)
         .def("berserk", &CScriptGameObject::berserk)
+        .def("is_berserk", &CScriptGameObject::is_berserk)
         .def("can_script_capture", &CScriptGameObject::can_script_capture)
         .def("set_custom_panic_threshold", &CScriptGameObject::set_custom_panic_threshold)
         .def("set_default_panic_threshold", &CScriptGameObject::set_default_panic_threshold)

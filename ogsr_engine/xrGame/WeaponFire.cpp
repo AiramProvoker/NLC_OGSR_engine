@@ -3,6 +3,7 @@
 //////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "fl_hook.h"
 #include "Weapon.h"
 #include "ParticlesObject.h"
 #include "HUDManager.h"
@@ -19,6 +20,8 @@ float CWeapon::GetWeaponDeterioration() { return conditionDecreasePerShot; };
 
 void CWeapon::FireTrace(const Fvector& P, const Fvector& D)
 {
+    fl_hook::weapon_before_fire(this, false);
+
     VERIFY(m_magazine.size());
 
     CCartridge& l_cartridge = m_magazine.back();
@@ -33,22 +36,17 @@ void CWeapon::FireTrace(const Fvector& P, const Fvector& D)
     //повысить изношенность оружия с учетом влияния конкретного патрона
     //	float Deterioration = GetWeaponDeterioration();
     //	Msg("Deterioration = %f", Deterioration);
-    if (Core.Features.test(xrCore::Feature::npc_simplified_shooting))
-    {
-        CActor* actor = smart_cast<CActor*>(H_Parent());
-        if (actor)
-            ChangeCondition(-GetWeaponDeterioration() * l_cartridge.m_impair);
-    }
-    else
+    if (!Core.Features.test(xrCore::Feature::npc_simplified_shooting) || smart_cast<CActor*>(H_Parent()))
         ChangeCondition(-GetWeaponDeterioration() * l_cartridge.m_impair);
 
     float fire_disp = GetFireDispersion(true);
 
     bool SendHit = SendHitAllowed(H_Parent());
+    const u16 parent_id = m_bForcedFire ? Actor()->ID() : H_Parent()->ID();
     //выстерлить пулю (с учетом возможной стрельбы дробью)
     for (int i = 0; i < l_cartridge.m_buckShot; ++i)
     {
-        FireBullet(P, D, fire_disp, l_cartridge, H_Parent()->ID(), ID(), SendHit);
+        FireBullet(P, D, fire_disp, l_cartridge, parent_id, ID(), SendHit);
     }
 
     if (m_bLightShotEnabled)
@@ -68,6 +66,8 @@ void CWeapon::FireTrace(const Fvector& P, const Fvector& D)
 }
 
 void CWeapon::Fire2Start() { bWorking2 = true; }
+
+void CWeapon::ForcedFireStart(bool flag) { m_bForcedFire = flag; }
 void CWeapon::Fire2End()
 {
     //принудительно останавливать зацикленные партиклы

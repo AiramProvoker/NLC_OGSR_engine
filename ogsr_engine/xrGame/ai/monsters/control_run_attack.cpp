@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../../fl_hook.h"
 #include "control_run_attack.h"
 #include "BaseMonster/base_monster.h"
 #include "monster_velocity_space.h"
@@ -54,31 +55,73 @@ void CControlRunAttack::on_release()
 
 bool CControlRunAttack::check_start_conditions()
 {
+    // Stock is too strict for OGSR boars: the path controller owns pure capture during the chase,
+    // the face cone is ~30 deg and the speed must match run speed within 2. The ram has to start
+    // while charging toward the enemy without taking over standing melee (paws).
     if (is_active())
+    {
+        fl_hook::boar_result(fl_hook::eBoarActive);
         return false;
-    if (m_man->is_captured_pure())
-        return false;
+    }
 
     const CEntityAlive* enemy = m_object->EnemyMan.get_enemy();
     if (!enemy)
+    {
+        fl_hook::boar_result(fl_hook::eBoarNoEnemy);
         return false;
-    // check if faced enemy
-    if (!m_man->direction().is_face_target(enemy, PI_DIV_6))
-        return false;
+    }
 
-    float dist = enemy->Position().distance_to(m_object->Position());
-    // check distance to enemy
-    if ((dist > m_max_dist) || (dist < m_min_dist))
+    const u32 now = Device.dwTimeGlobal;
+    if (m_time_next_attack > now)
+    {
+        fl_hook::boar_result(fl_hook::eBoarCooldown);
         return false;
+    }
 
-    // check if run state, speed
-    SVelocityParam& velocity_run = m_object->move().get_velocity(MonsterMovement::eVelocityParameterRunNormal);
-    if (!fsimilar(m_man->movement().velocity_current(), velocity_run.velocity.linear, 2.f))
+    Fvector to_enemy;
+    to_enemy.sub(enemy->Position(), m_object->Position());
+    const float dist = to_enemy.magnitude();
+    fl_hook::boar_last_dist = dist;
+
+    // Run_Attack_Dist as configured, a floor only for a broken config and a hard cap
+    float dmin = m_min_dist;
+    float dmax = m_max_dist;
+    if (dmin < 2.5f)
+        dmin = 2.5f;
+    if (dmax < dmin + 0.5f)
+        dmax = dmin + 3.0f;
+    if (dmax > 10.0f)
+        dmax = 10.0f;
+    if (dist < dmin || dist > dmax)
+    {
+        fl_hook::boar_result(fl_hook::eBoarDistance);
         return false;
+    }
 
-    if (m_time_next_attack > time())
+    // ~55 deg face cone on XZ from the object's forward vector
+    const Fvector& fwd = m_object->XFORM().k;
+    const float fl2 = fwd.x * fwd.x + fwd.z * fwd.z;
+    const float tl2 = to_enemy.x * to_enemy.x + to_enemy.z * to_enemy.z;
+    const float dot = fwd.x * to_enemy.x + fwd.z * to_enemy.z;
+    if (fl2 < 1e-8f || tl2 < 1e-8f || dot <= 0.f || dot * dot < 0.329f * fl2 * tl2)
+    {
+        fl_hook::boar_result(fl_hook::eBoarNotFacing);
         return false;
+    }
 
+    // real movement required, so standing combat stays on eAnimAttack (paws)
+    const float vcur = m_man->movement().velocity_current();
+    fl_hook::boar_last_vel = vcur;
+    if (vcur < 2.0f)
+    {
+        fl_hook::boar_result(fl_hook::eBoarStanding);
+        return false;
+    }
+
+    // activate() snaps the heading to the enemy: a charge that ends early must not re-lock at once
+    m_time_next_attack = now + 2200;
+
+    fl_hook::boar_result(fl_hook::eBoarOk);
     return true;
 }
 

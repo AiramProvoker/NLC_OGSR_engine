@@ -73,6 +73,16 @@ private:
         size_t vfs_idx{VFS_STANDARD_FILE};
         size_t size{};
 
+        bool obf_enabled{};
+        u16 obf_key_id{};
+        u8 obf_flags{};
+        s64 obf_data_offset{};
+        u32 obf_block_size{};
+        bool obf_has_tmp{};
+        string_path obf_tmp_path{};
+
+        const char* sqfs_path() const { return obf_enabled && obf_has_tmp && obf_tmp_path[0] ? obf_tmp_path : path.c_str(); }
+
     private:
         class xr_sqfs;
         class xr_sqfs_stream;

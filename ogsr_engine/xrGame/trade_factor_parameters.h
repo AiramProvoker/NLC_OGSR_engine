@@ -23,6 +23,7 @@ public:
     IC void clear();
     IC void enable(const shared_str& section, const CTradeFactors& factors);
     IC bool enabled(const shared_str& section) const;
+    IC bool listed(const shared_str& section) const { return m_factors.find(section) != m_factors.end(); }
     IC bool disabled(const shared_str& section) const;
     IC const CTradeFactors& factors(const shared_str& section) const;
 };

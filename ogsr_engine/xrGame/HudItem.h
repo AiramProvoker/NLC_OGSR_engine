@@ -39,6 +39,7 @@ public:
         eReady,
         eThrow,
         eThrowEnd,
+        eSwitchFiremode,
     };
 
 private:
@@ -164,9 +165,11 @@ public:
 
     u32 PlayHUDMotion(std::initializer_list<const char*>, const bool bMixIn, const u32 state, const bool randomAnim = true, float speed = 1.f);
     u32 PlayHUDMotion(const char* M, const bool bMixIn, const u32 state, const bool randomAnim = true, float speed = 1.f);
+    u32 PlayHUDMotion_base(const char* M, const bool bMixIn, const u32 state, const bool randomAnim, float speed);
     u32 PlayHUDMotion_noCB(const shared_str& M, const bool bMixIn, const bool randomAnim = true, float speed = 1.f);
 
     bool AnimationExist(const char* M) const;
+    bool AddSuffixName(shared_str& anim, LPCSTR suffix, LPCSTR suffix2 = "") const;
     void StopCurrentAnimWithoutCallback();
 
     attachable_hud_item* HudItemData() const;
@@ -318,6 +321,12 @@ private:
     float m_base_fov{};
 
     bool allow_bobbing{true};
+
+protected:
+    bool allow_drum_anims{};
+    bool m_bUseAltAimZoom{};
+
+private:
 
     struct inertion_params
     {

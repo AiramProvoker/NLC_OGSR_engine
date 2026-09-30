@@ -333,8 +333,6 @@ void CUICellItem::ColorizeItems(std::initializer_list<CUIDragDropListEx*> args)
     static const bool colorize_ammo = Core.Features.test(xrCore::Feature::colorize_ammo);
     static const u32 Color = READ_IF_EXISTS(pSettings, r_color, "dragdrop", "color_ammo", color_argb(255, 0, 128, 0));
 
-    inventoryitem->m_cell_item->SetClrLightAnim(NULL);
-
     auto ProcessColorize = [](CUICellItem* Itm, u32 Clr) {
         Itm->SetTextureColor(Clr);
         if (auto WpnCell = smart_cast<CUIWeaponCellItem*>(Itm))
@@ -433,8 +431,12 @@ void CUICellItem::ColorizeItems(std::initializer_list<CUIDragDropListEx*> args)
 
     if (auto Wpn = smart_cast<CWeaponMagazined*>(inventoryitem))
     {
-        WpnScanner(Wpn);
-        ColorizeAmmoAddons();
+        static const CLASS_ID binoc_clsid = TEXT2CLSID("WP_BINOC");
+        if (Wpn->CLS_ID != binoc_clsid)
+        {
+            WpnScanner(Wpn);
+            ColorizeAmmoAddons();
+        }
     }
     else
     { //Надо подумать, какое условие тут сделать. Аддоны например, могут быть не именно аддонами, а фейк-предметами, например. Лушчше наверно вообще без каких-либо условий.

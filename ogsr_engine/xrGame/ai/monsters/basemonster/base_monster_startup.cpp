@@ -255,8 +255,6 @@ void CBaseMonster::reinit()
 
     MeleeChecker.init_attack();
 
-    time_berserk_start = 0;
-
     m_prev_sound_type = MonsterSound::eMonsterSoundIdle;
 
 #ifdef DEBUG

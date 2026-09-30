@@ -90,8 +90,12 @@ public:
         eZoneStateMax
     } EZoneState;
 
+public:
+    void SetIgnoreAny(bool status) { IgnoreAny = status; }
+
 protected:
     bool IgnoreAny{};
+    bool IgnoreAnomalyDetector{};
     bool IgnoreNonAlive{};
     bool IgnoreSmall{};
     bool IgnoreArtefact{};

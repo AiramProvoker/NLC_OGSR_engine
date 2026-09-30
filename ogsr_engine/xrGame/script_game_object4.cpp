@@ -677,6 +677,16 @@ void CScriptGameObject::SetRadiationInfluence(float rad)
     }
     item->SetRadiation(rad);
 }
+void CScriptGameObject::DisableUse()
+{
+    CEatableItem* item = smart_cast<CEatableItem*>(&object());
+    if (!item)
+    {
+        ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError, "CEatableItem : cannot access class member DisableUse!");
+        return;
+    }
+    item->disable_use = true;
+}
 
 void CScriptGameObject::SetDrugRadProtection(float _prot)
 {

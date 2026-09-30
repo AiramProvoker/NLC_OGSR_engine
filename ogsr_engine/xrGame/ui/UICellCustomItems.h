@@ -8,6 +8,7 @@ class CUIInventoryCellItem : public CUICellItem
 
 protected:
     bool b_auto_drag_childs;
+    u16 is_weapon_cell_id{u16(-1)};
 
 public:
     CUIInventoryCellItem(CInventoryItem* itm);
@@ -20,8 +21,6 @@ public:
     virtual void OnFocusReceive();
     virtual void OnFocusLost();
     virtual bool OnMouse(float, float, EUIMessages);
-    // Real Wolf: Для метода get_cell_item(). 25.07.2014.
-    virtual ~CUIInventoryCellItem();
 };
 
 class CUIAmmoCellItem : public CUIInventoryCellItem
@@ -54,6 +53,8 @@ public:
 
 protected:
     Fvector2 m_addon_offset[eMaxAddon];
+    int m_iSilencerXOffset{}, m_iSilencerYOffset{};
+    Fvector2 SilencerOffset(bool vertical) const;
     void CreateIcon(eAddonType, CIconParams& params);
     void DestroyIcon(eAddonType);
     CUIStatic* GetIcon(eAddonType);

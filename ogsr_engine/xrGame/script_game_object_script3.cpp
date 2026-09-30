@@ -202,6 +202,7 @@ class_<CScriptGameObject> script_register_game_object2(class_<CScriptGameObject>
         // CustomZone
         .def("enable_anomaly", &CScriptGameObject::EnableAnomaly)
         .def("disable_anomaly", &CScriptGameObject::DisableAnomaly)
+        .def("set_ignore_any", &CScriptGameObject::SetIgnoreAny)
         .def("get_anomaly_power", &CScriptGameObject::GetAnomalyPower)
         .def("set_anomaly_power", &CScriptGameObject::SetAnomalyPower)
 
@@ -238,6 +239,8 @@ class_<CScriptGameObject> script_register_game_object2(class_<CScriptGameObject>
         .def("sell_condition", (void(CScriptGameObject::*)(CInifile*, LPCSTR))(&CScriptGameObject::sell_condition))
         .def("sell_condition", (void(CScriptGameObject::*)(float, float))(&CScriptGameObject::sell_condition))
         .def("buy_supplies", &CScriptGameObject::buy_supplies)
+        .def("ignore_trade_cond_factor", &CScriptGameObject::ignoreTradeCondFactor)
+        .def("trade_virtual_cost", &CScriptGameObject::setTradeVCost)
 
         .def("sound_prefix", (LPCSTR(CScriptGameObject::*)() const)(&CScriptGameObject::sound_prefix))
         .def("sound_prefix", (void(CScriptGameObject::*)(LPCSTR))(&CScriptGameObject::sound_prefix))
@@ -401,7 +404,9 @@ class_<CScriptGameObject> script_register_game_object2(class_<CScriptGameObject>
         .def("reset_state", &CScriptGameObject::ResetState)
 
         // для CEatableItem
+        .def("set_name", &CScriptGameObject::SetObjectName)
         .def("zero_effects", &CScriptGameObject::ZeroEffects)
+        .def("disable_use", &CScriptGameObject::DisableUse)
         .def("set_radiation_influence", &CScriptGameObject::SetRadiationInfluence)
         // для актора - иммунитеты
         .def("set_additional_radiation_protection", &CScriptGameObject::SetDrugRadProtection)
@@ -410,7 +415,6 @@ class_<CScriptGameObject> script_register_game_object2(class_<CScriptGameObject>
         // KD
 
         // by Real Wolf 11.07.2014
-        .def("get_cell_item", &CScriptGameObject::GetCellItem)
         .def("get_bone_name", &CScriptGameObject::GetBoneName)
 
         .def("get_hud_item_state", &CScriptGameObject::GetHudItemState)

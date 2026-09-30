@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "fl_hook.h"
 #include <dinput.h>
 #include "Actor.h"
 #include "Torch.h"
@@ -35,10 +36,19 @@
 #include "ui/UIPDAWnd.h"
 
 bool g_bAutoClearCrouch = true;
+int g_iCrouchState = 0;
+bool g_bAutoClearFWD = true;
+static u32 kick_time = 0;
 extern int g_bHudAdjustMode;
 
 void CActor::IR_OnKeyboardPress(int cmd)
 {
+    if (fl_hook::torch_lua && (cmd == kTORCH || cmd == kTORCH_MODE) && !inventory().ActiveItem())
+    {
+        ++fl_hook::torch_blocked_n;
+        return;
+    }
+
     if (g_bHudAdjustMode && pInput->iGetAsyncKeyState(DIK_LSHIFT))
     {
         if (pInput->iGetAsyncKeyState(DIK_RETURN) || pInput->iGetAsyncKeyState(DIK_BACKSPACE) || pInput->iGetAsyncKeyState(DIK_DELETE))
@@ -87,9 +97,14 @@ void CActor::IR_OnKeyboardPress(int cmd)
     }
     break;
     case kCROUCH_TOGGLE: {
-        g_bAutoClearCrouch = !g_bAutoClearCrouch;
-        if (!g_bAutoClearCrouch)
+        g_iCrouchState = (g_iCrouchState + 1) % 3;
+        g_bAutoClearCrouch = g_iCrouchState == 0;
+        if (g_iCrouchState)
+        {
             mstate_wishful |= mcCrouch;
+            if (g_iCrouchState > 1)
+                mstate_wishful |= mcAccel;
+        }
     }
     break;
     case kSPRINT_TOGGLE: {
@@ -103,19 +118,79 @@ void CActor::IR_OnKeyboardPress(int cmd)
     case kCAM_2: cam_Set(eacLookAt); break;
     case kCAM_3: cam_Set(eacFreeLook); break;
     case kNIGHT_VISION:
-    case kTORCH: {
+    case kTORCH:
+    case kTORCH_MODE: {
+        auto switch_torch = [cmd](CTorch* pTorch) {
+            if (cmd == kNIGHT_VISION)
+            {
+                if (g_actor && g_actor->can_switch_nv)
+                    pTorch->SwitchNightVision();
+                return;
+            }
+            pTorch->switch_mode = cmd == kTORCH_MODE;
+            pTorch->Switch();
+        };
+
+        if (!Core.Features.test(xrCore::Feature::busy_actor_restrictions))
+        {
+            if (auto pTorch = smart_cast<CTorch*>(inventory().ItemFromSlot(TORCH_SLOT)))
+                switch_torch(pTorch);
+            return;
+        }
+
         auto act_it = inventory().ActiveItem();
         auto active_hud = smart_cast<CHudItem*>(act_it);
-        if (active_hud && active_hud->GetState() != CHudItem::eIdle && Core.Features.test(xrCore::Feature::busy_actor_restrictions))
+        if (active_hud && active_hud->GetState() != CHudItem::eIdle)
             return;
         auto pTorch = smart_cast<CTorch*>(inventory().ItemFromSlot(TORCH_SLOT));
         if (pTorch && !smart_cast<CWeaponMagazined*>(act_it) && !smart_cast<CWeaponKnife*>(act_it) && !smart_cast<CMissile*>(act_it))
-            cmd == kNIGHT_VISION ? pTorch->SwitchNightVision() : pTorch->Switch();
+            switch_torch(pTorch);
     }
     break;
     case kWPN_8: {
         if (auto det = smart_cast<CCustomDetector*>(inventory().ItemFromSlot(DETECTOR_SLOT)))
-            det->ToggleDetector(g_player_hud->attached_item(0) != nullptr);
+            if (!HUD().GetUI()->MainInputReceiver())
+                det->ToggleDetector(g_player_hud->attached_item(0) != nullptr);
+    }
+    break;
+    case kFWD_TOGGLE: {
+        const bool was = g_bAutoClearFWD;
+        g_bAutoClearFWD = !g_bAutoClearFWD;
+        if (was)
+            mstate_wishful |= mcFwd;
+    }
+    break;
+    case kKICK: {
+        CGameObject* obj = m_pObjectWeLookingAt;
+        if (!obj)
+            break;
+        const u32 kick_delay = READ_IF_EXISTS(pSettings, r_u32, "actor", "kick_delay", 2000);
+        if (Device.dwTimeContinual - kick_time < kick_delay)
+            break;
+        static const float kick_impulse = READ_IF_EXISTS(pSettings, r_float, "actor", "kick_impulse", 150.f);
+
+        const Fvector& k = XFORM().k;
+        const float inv = 1.f / _sqrt(k.x * k.x + 0.066987298f + k.z * k.z);
+        Fvector dir{k.x * inv, 0.25881904f * inv, k.z * inv};
+
+        float mass = 1.f;
+        if (auto sh = smart_cast<CPhysicsShellHolder*>(obj))
+            mass = sh->GetMass();
+        if (auto item = smart_cast<CInventoryItem*>(obj))
+            mass = item->Weight();
+        if (auto owner = smart_cast<CInventoryOwner*>(obj))
+            mass += owner->GetCarryWeight();
+        mass = _max(mass, 1.f);
+
+        u16 bone = 0;
+        const collide::rq_result& RQ = HUD().GetCurrentRayQuery();
+        if (RQ.O == obj && RQ.element != 0xFFFF)
+            bone = u16(RQ.element);
+
+        const float power = (mass >= 0.1f ? _min(mass, 100.f) : 0.1f) * 0.001f;
+        SHit hit(power, dir, this, bone, obj->Position(), kick_impulse, ALife::eHitTypePhysicStrike);
+        obj->Hit(&hit);
+        kick_time = Device.dwTimeContinual;
     }
     break;
     case kUSE: ActorUse(); break;
@@ -142,14 +217,7 @@ void CActor::IR_OnKeyboardPress(int cmd)
         {
             PIItem itm = inventory().item((cmd == kUSE_BANDAGE) ? CLSID_IITEM_BANDAGE : CLSID_IITEM_MEDKIT);
             if (itm)
-            {
                 inventory().Eat(itm);
-                SDrawStaticStruct* _s = HUD().GetUI()->UIGame()->AddCustomStatic("item_used", true);
-                _s->m_endTime = Device.fTimeGlobal + 3.0f; // 3sec
-                string1024 str;
-                strconcat(sizeof(str), str, *CStringTable().translate("st_item_used"), ": ", itm->Name());
-                _s->wnd()->SetText(str);
-            }
         }
     }
     break;
@@ -171,10 +239,18 @@ void CActor::IR_OnMouseWheel(int direction)
 
     if (psActorFlags.test(AF_MOUSE_WHEEL_SWITCH_SLOTS))
     {
-        if (direction > 0)
-            OnNextWeaponSlot();
-        else
-            OnPrevWeaponSlot();
+        extern bool g_block_all_except_movement;
+        if (!g_block_all_except_movement)
+        {
+            const int watch_dik = get_action_dik(action_name_to_id("watch"));
+            if (!watch_dik || !pInput->iGetAsyncKeyState(watch_dik))
+            {
+                if (direction > 0)
+                    OnNextWeaponSlot();
+                else
+                    OnPrevWeaponSlot();
+            }
+        }
     }
     else
     {
@@ -222,7 +298,8 @@ void CActor::IR_OnKeyboardRelease(int cmd)
             if (GAME_PHASE_INPROGRESS == Game().Phase())
                 g_PerformDrop();
             break;
-        case kCROUCH: g_bAutoClearCrouch = true;
+        case kCROUCH: g_bAutoClearCrouch = true; break;
+        case kFWD: g_bAutoClearFWD = true; break;
         }
     }
 }
@@ -421,7 +498,9 @@ void CActor::ActorUse()
             return;
     }
 
-    if (m_pInvBoxWeLookingAt && m_pInvBoxWeLookingAt->object().nonscript_usable() && m_pInvBoxWeLookingAt->IsOpened())
+    const bool has_shadow_inventory = !!inventory().GetItemFromInventory("shadow_inventory");
+
+    if (m_pInvBoxWeLookingAt && m_pInvBoxWeLookingAt->object().nonscript_usable() && m_pInvBoxWeLookingAt->IsOpened() && has_shadow_inventory)
     {
         // если контейнер открыт
         CUIGameSP* pGameSP = smart_cast<CUIGameSP*>(HUD().GetUI()->UIGame());
@@ -438,11 +517,12 @@ void CActor::ActorUse()
             VERIFY(pEntityAliveWeLookingAt);
             if (pEntityAliveWeLookingAt->g_Alive())
             {
+                m_bAllowTrade = has_shadow_inventory;
                 TryToTalk();
                 return;
             }
             //обыск трупа
-            else if (!pInput->iGetAsyncKeyState(DIK_LSHIFT))
+            else if (!pInput->iGetAsyncKeyState(DIK_LSHIFT) && has_shadow_inventory)
             {
                 //только если находимся в режиме single
                 CUIGameSP* pGameSP = smart_cast<CUIGameSP*>(HUD().GetUI()->UIGame());

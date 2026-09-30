@@ -405,6 +405,9 @@ void CBulletManager::CommitRenderSet() // @ the end of frame
 }
 void CBulletManager::CommitEvents() // @ the start of frame
 {
+    if (Device.dwFrame > m_dwLastWallmarkFrame + 10)
+        m_iLastWallmarkObjectID = -1;
+
     for (auto& E : m_Events)
     {
         switch (E.Type)

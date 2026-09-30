@@ -12,6 +12,12 @@ class CTrade
     bool TradeState; // режим торговли. true - включен
     u32 m_dwLastTradeTime;
 
+public:
+    float m_vcost{};
+    bool m_use_vcost{};
+    bool m_ignore_cond_factor{};
+
+private:
     typedef enum tagTraderType
     {
         TT_NONE,

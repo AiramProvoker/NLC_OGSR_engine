@@ -6,6 +6,8 @@
 #include <iomanip> //для std::strftime
 #include <array> //для std::array
 #include <iostream>
+#include <mmsystem.h>
+#pragma comment(lib, "winmm.lib")
 
 static LogCallback LogCB = nullptr;
 xr_vector<std::string> LogFile;
@@ -91,6 +93,13 @@ void Log(const std::string& str)
 {
     if (str.empty())
         return;
+
+    if (str.find("#ERROR") != std::string::npos && xr_FS && xr_FS->m_Flags.test(CLocatorAPI::flReady))
+    {
+        string_path snd;
+        if (xr_FS->update_path(snd, "$fs_root$", "sounds\\error.wav"))
+            PlaySound(snd, nullptr, SND_FILENAME | SND_NOWAIT);
+    }
 
     bool not_first_line = false;
 

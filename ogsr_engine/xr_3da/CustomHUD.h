@@ -28,6 +28,7 @@ enum HUD_Flags : u32
     HUD_DEBUG_MAIN = 1 << 13,
 
     HUD_INFO_OVERHEAD = 1 << 14,
+    HUD_SHOW_STATUS_ICONS = 1 << 15,
 };
 
 class CUI;

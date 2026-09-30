@@ -56,6 +56,7 @@ private:
         // !Место свободно! = (1 << 6),
         flHighlightCellSp = (1 << 7),
         flHighlightAllCells = (1 << 8),
+        flShowGrid = (1 << 9),
     };
     Flags16 m_flags;
     CUICellItem* m_selected_item;
@@ -135,6 +136,8 @@ public:
     void SetHighlightCellSp(bool b);
     bool GetHighlightAllCells();
     void SetHighlightAllCells(bool b);
+    void SetShowGrid(bool b) { m_flags.set(flShowGrid, b); }
+    bool GetShowGrid() const { return !!m_flags.test(flShowGrid); }
 
     bool GetConditionProgBarVisibility() { return m_bConditionProgBarVisible; };
     void SetConditionProgBarVisibility(bool b) { m_bConditionProgBarVisible = b; };
@@ -176,6 +179,7 @@ class CUICellContainer : public CUIWindow
 private:
     typedef CUIWindow inherited;
     ui_shader hShader; // ownerDraw
+    ui_shader hShader0;
     UI_CELLS_VEC m_cells_to_draw;
 
 protected:

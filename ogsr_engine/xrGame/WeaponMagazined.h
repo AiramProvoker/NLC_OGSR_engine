@@ -30,6 +30,7 @@ protected:
     HUD_SOUND sndZoomChange;
     HUD_SOUND sndTactItemOn;
     HUD_SOUND sndAimStart, sndAimEnd;
+    HUD_SOUND m_sndBreech, m_sndBreechL, m_sndBreechJammed;
     HUD_SOUND sndItemOn;
     //звук текущего выстрела
     HUD_SOUND* m_pSndShotCurrent;
@@ -64,6 +65,7 @@ protected:
     virtual void switch2_Showing();
 
     virtual void OnShot();
+    virtual void PerformForcedShot() override;
 
     virtual void OnEmptyClick();
 
@@ -175,6 +177,10 @@ public:
     virtual void OnZoomChanged();
     virtual void OnNextFireMode(bool = false);
     virtual void OnPrevFireMode(bool = false);
+    LPCSTR GetAnimFireModeSwitch();
+    bool firemodeprev{};
+    bool firemodeopt{};
+    string128 guns_firemode_anm{};
     virtual bool HasFireModes() { return m_bHasDifferentFireModes; };
     virtual int GetCurrentFireMode() { return m_bHasDifferentFireModes ? m_aFireModes[m_iCurFireMode] : 1; };
     virtual LPCSTR GetCurrentFireModeStr() { return m_sCurFireMode; };

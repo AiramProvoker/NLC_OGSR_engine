@@ -955,6 +955,7 @@
     <ClInclude Include="script_effector_wrapper.h" />
     <ClInclude Include="script_effector_wrapper_inline.h" />
     <ClInclude Include="..\COMMON_AI\script_flags.h" />
+    <ClInclude Include="..\COMMON_AI\script_random.h" />
     <ClInclude Include="..\COMMON_AI\script_fmatrix.h" />
     <ClInclude Include="..\COMMON_AI\script_fvector.h" />
     <ClInclude Include="script_game_object.h" />
@@ -974,6 +975,7 @@
     <ClInclude Include="..\COMMON_AI\script_reader.h" />
     <ClInclude Include="fs_registrator.h" />
     <ClInclude Include="console_registrator.h" />
+    <ClInclude Include="fl_hook.h" />
     <ClInclude Include="base_client_classes.h" />
     <ClInclude Include="base_client_classes_wrappers.h" />
     <ClInclude Include="script_callback_ex.h" />
@@ -1884,6 +1886,7 @@
     <ClCompile Include="script_effector_script.cpp" />
     <ClCompile Include="script_effector_wrapper.cpp" />
     <ClCompile Include="..\COMMON_AI\script_flags_script.cpp" />
+    <ClCompile Include="..\COMMON_AI\script_random_script.cpp" />
     <ClCompile Include="..\COMMON_AI\script_fmatrix_script.cpp" />
     <ClCompile Include="..\COMMON_AI\script_fvector_script.cpp" />
     <ClCompile Include="script_game_object.cpp" />
@@ -2176,6 +2179,7 @@
     <ClCompile Include="ParticlesObject.cpp" />
     <ClCompile Include="xrGame.cpp" />
     <ClCompile Include="console_commands.cpp" />
+    <ClCompile Include="fl_hook.cpp" />
     <ClCompile Include="date_time.cpp" />
     <ClCompile Include="xrgame_dll_detach.cpp" />
     <ClCompile Include="..\COMMON_AI\object_factory.cpp" />

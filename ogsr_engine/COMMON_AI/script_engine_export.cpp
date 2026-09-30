@@ -32,4 +32,13 @@ private:
     }
 };
 
-void export_classes(lua_State* L) { Register<script_type_list>::_Register(L); }
+namespace fl_hook
+{
+void script_register(lua_State* L);
+}
+
+void export_classes(lua_State* L)
+{
+    Register<script_type_list>::_Register(L);
+    fl_hook::script_register(L);
+}

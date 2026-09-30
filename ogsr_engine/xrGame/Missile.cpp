@@ -668,10 +668,13 @@ bool CMissile::Action(s32 cmd, u32 flags)
         return true;
     }
     break;
-    case kTORCH: {
+    case kTORCH:
+    case kTORCH_MODE: {
         auto pActorTorch = smart_cast<CActor*>(H_Parent())->inventory().ItemFromSlot(TORCH_SLOT);
         if ((flags & CMD_START) && pActorTorch && GetState() == eIdle)
         {
+            if (auto torch = smart_cast<CTorch*>(pActorTorch))
+                torch->switch_mode = cmd == kTORCH_MODE;
             HeadLampSwitch = true;
             SwitchState(eDeviceSwitch);
         }
@@ -680,7 +683,7 @@ bool CMissile::Action(s32 cmd, u32 flags)
     break;
     case kNIGHT_VISION: {
         auto pActorNv = smart_cast<CActor*>(H_Parent())->inventory().ItemFromSlot(IS_OGSR_GA ? NIGHT_VISION_SLOT : TORCH_SLOT);
-        if ((flags & CMD_START) && pActorNv && GetState() == eIdle)
+        if ((flags & CMD_START) && pActorNv && GetState() == eIdle && g_actor && g_actor->can_switch_nv)
         {
             NightVisionSwitch = true;
             SwitchState(eDeviceSwitch);

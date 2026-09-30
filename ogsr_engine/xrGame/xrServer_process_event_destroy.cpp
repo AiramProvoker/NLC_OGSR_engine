@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "script_engine.h"
 #include "xrServer.h"
 #include "game_sv_single.h"
 #include "alife_simulator.h"
@@ -41,6 +42,13 @@ void xrServer::Process_event_destroy(NET_Packet& P, ClientID sender, u32 time, u
     };
 
     R_ASSERT(e_dest);
+
+    {
+        luabind::functor<void> lua_function;
+        if (ai().script_engine().functor("_G.on_release_client_callback", lua_function))
+            lua_function(e_dest);
+    }
+
     xrClientData* c_dest = e_dest->owner; // клиент, чей юнит
     R_ASSERT(c_dest);
     xrClientData* c_from = ID_to_client(sender); // клиент, кто прислал

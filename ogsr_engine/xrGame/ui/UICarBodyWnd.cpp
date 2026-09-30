@@ -257,6 +257,21 @@ void CUICarBodyWnd::Hide()
     PlaySnd(eInvSndClose);
 }
 
+bool CUICarBodyWnd::AllowShowInCarBody(CInventoryItem* item, bool our)
+{
+    if (item && item->m_flags.test(CInventoryItem::FIHiddenForInventory))
+        return false;
+
+    bool allow = true;
+    if (pSettings->line_exist("engine_callbacks", "actor_on_item_before_show_in_carbody"))
+    {
+        const std::string callback = pSettings->r_string("engine_callbacks", "actor_on_item_before_show_in_carbody");
+        if (luabind::functor<bool> func; ai().script_engine().functor(callback.c_str(), func))
+            allow = func(item->object().lua_game_object(), our);
+    }
+    return allow;
+}
+
 void CUICarBodyWnd::UpdateLists()
 {
     TIItemContainer ruck_list;
@@ -270,6 +285,8 @@ void CUICarBodyWnd::UpdateLists()
     //Наш рюкзак
     for (const auto& inv_item : ruck_list)
     {
+        if (!AllowShowInCarBody(inv_item, true))
+            continue;
         CUICellItem* itm = create_cell_item(inv_item);
         if (inv_item->m_highlight_equipped)
         {
@@ -290,6 +307,8 @@ void CUICarBodyWnd::UpdateLists()
     //Чужой рюкзак
     for (const auto& inv_item : ruck_list)
     {
+        if (!AllowShowInCarBody(inv_item, false))
+            continue;
         CUICellItem* itm = create_cell_item(inv_item);
         m_pUIOthersBagList->SetItem(itm);
     }

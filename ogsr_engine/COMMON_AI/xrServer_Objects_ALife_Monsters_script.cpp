@@ -28,6 +28,12 @@ void CSE_ALifeTraderAbstract::script_register(lua_State* L)
                   .def("profile_name", &profile_name_script)
                   .def("rank", &Rank)
                   .def("reputation", &Reputation)
+                  .def("character_icon", &CSE_ALifeTraderAbstract::character_icon)
+                  .def("name_translated",
+                       [](CSE_ALifeTraderAbstract* ta) -> LPCSTR {
+                           ta->name_translated();
+                           return ta->m_character_name_translated.c_str();
+                       })
 #endif // XRGAME_EXPORTS
                   .def_readwrite("money", &CSE_ALifeTraderAbstract::m_dwMoney)
                   .property("character_name", &character_name_script, &set_character_name_script)];

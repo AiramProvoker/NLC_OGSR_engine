@@ -71,6 +71,12 @@ enum EGameActions
     kHIDEHUD,
     kSHOWHUD,
 
+    kFWD_TOGGLE,
+    kWPN_ALT_AIM,
+    kKICK,
+    kTORCH_MODE,
+    kPDA_CLOCK,
+
     kLASTACTION = u32(-3),
     kNOTBINDED = u32(-2),
     kFORCEDWORD = u32(-1)

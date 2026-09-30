@@ -17,7 +17,6 @@
 CUIInventoryCellItem::CUIInventoryCellItem(CInventoryItem* itm)
 {
     m_pData = (void*)itm;
-    itm->m_cell_item = this;
 
     itm->m_icon_params.set_shader(this);
 
@@ -53,12 +52,6 @@ bool CUIInventoryCellItem::EqualTo(CUICellItem* itm)
     return (fsimilar(object()->GetCondition(), ci->object()->GetCondition(), 0.01f) && (object()->object().cNameSect() == ci->object()->object().cNameSect()));
 }
 
-CUIInventoryCellItem::~CUIInventoryCellItem()
-{
-    if (auto item = object())
-        item->m_cell_item = NULL;
-}
-
 void CUIInventoryCellItem::OnFocusReceive()
 {
     m_selected = true;
@@ -91,9 +84,19 @@ void CUIInventoryCellItem::OnFocusLost()
 
     inherited::OnFocusLost();
 
-    if (object()->object().m_spawned)
+    if (is_weapon_cell_id != u16(-1))
     {
-        auto script_obj = object()->object().lua_game_object();
+        auto obj = smart_cast<CGameObject*>(Level().Objects.net_Find(is_weapon_cell_id));
+        if (!obj)
+            return;
+        g_actor->callback(GameObject::eCellItemFocusLost)(obj->lua_game_object());
+        return;
+    }
+
+    auto item = object();
+    if (item && item->object().m_spawned)
+    {
+        auto script_obj = item->object().lua_game_object();
         g_actor->callback(GameObject::eCellItemFocusLost)(script_obj);
     }
 }
@@ -204,10 +207,15 @@ CUIWeaponCellItem::CUIWeaponCellItem(CWeapon* itm) : inherited(itm)
     m_addons[eScope] = NULL;
     m_addons[eLauncher] = NULL;
 
+    is_weapon_cell_id = itm->ID();
     m_cell_size.set(INV_GRID_WIDTHF, INV_GRID_HEIGHTF);
 
     if (itm->SilencerAttachable())
+    {
+        m_iSilencerXOffset = itm->m_iSilencerXOffset;
+        m_iSilencerYOffset = itm->m_iSilencerYOffset;
         m_addon_offset[eSilencer].set(object()->GetSilencerX(), object()->GetSilencerY());
+    }
 
     if (itm->ScopeAttachable())
         m_addon_offset[eScope].set(object()->GetScopeX(), object()->GetScopeY());
@@ -243,6 +251,17 @@ void CUIWeaponCellItem::DestroyIcon(eAddonType t)
 
 CUIStatic* CUIWeaponCellItem::GetIcon(eAddonType t) { return m_addons[t]; }
 
+Fvector2 CUIWeaponCellItem::SilencerOffset(bool vertical) const
+{
+    Fvector2 offset = m_addon_offset[eSilencer];
+    if (vertical)
+    {
+        offset.x += float(m_iSilencerXOffset);
+        offset.y += float(m_iSilencerYOffset);
+    }
+    return offset;
+}
+
 void CUIWeaponCellItem::Update()
 {
     bool b = Heading();
@@ -257,7 +276,7 @@ void CUIWeaponCellItem::Update()
             {
                 CIconParams params(object()->GetSilencerName());
                 CreateIcon(eSilencer, params);
-                InitAddon(GetIcon(eSilencer), params, m_addon_offset[eSilencer], Heading());
+                InitAddon(GetIcon(eSilencer), params, SilencerOffset(Heading()), Heading());
             }
         }
         else
@@ -323,7 +342,7 @@ void CUIWeaponCellItem::InitAllAddons(CUIStatic* s_silencer, CUIStatic* s_scope,
     {
         params.Load(*object()->GetSilencerName());
         params.set_shader(s_silencer);
-        InitAddon(s_silencer, params, m_addon_offset[eSilencer], b_vertical);
+        InitAddon(s_silencer, params, SilencerOffset(b_vertical), b_vertical);
     }
     if (s_scope)
     {

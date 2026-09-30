@@ -106,6 +106,11 @@ enum ECallbackType
     eOnActorFootStep,
     eOnActorLand,
     eOnActorJump,
+    eOnActorWeaponReloadEnd,
+    eSawObject,
+    eBeforeSwitchTorch,
+    eBeforeSwitchNVD,
+    eOnArtAnimActivationEnd,
     eOnActorBoltThrow,
 
     eDummy = u32(-1),

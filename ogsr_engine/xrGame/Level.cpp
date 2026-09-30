@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "fl_hook.h"
 #include "../xr_3da/fdemorecord.h"
 #include "../xr_3da/fdemoplay.h"
 #include "../xr_3da/environment.h"
@@ -327,6 +328,20 @@ void CLevel::cl_Process_Event(u16 dest, u16 type, NET_Packet& P)
 
     if (type == GE_DESTROY)
         Game().OnDestroy(GO);
+    else if (type == GE_TRANSFER_TAKE || type == GE_TRANSFER_REJECT)
+    {
+        const u32 pos = P.r_tell();
+        const u16 id = P.r_u16();
+        P.r_seek(pos);
+        CObject* item = id != u16(-1) ? Objects.net_Find(id) : nullptr;
+        if (!item)
+        {
+            Msg("! #ERROR: for event type %d not found item #%d ", type, id);
+            return;
+        }
+        if (type == GE_TRANSFER_TAKE ? item->H_Parent() == O : item->H_Parent() != O)
+            return;
+    }
 
     GO->OnEvent(P, type);
 }
@@ -372,6 +387,10 @@ void CLevel::ProcessGameEvents()
 
     if (!is_removing_objects())
         Device.add_to_seq_parallel(fastdelegate::MakeDelegate(this, &CLevel::ProcessGameSpawns));
+
+    luabind::functor<void> lua_function;
+    if (ai().script_engine().functor("_G.on_level_process_game_events", lua_function))
+        lua_function();
 }
 
 void CLevel::OnFrame()
@@ -456,7 +475,9 @@ void CLevel::OnRender()
     {
         Render->AfterWorldRender();
 
+        fl_hook::pda3d_vp2_pass = true;
         pGameSP->PdaMenu->Draw();
+        fl_hook::pda3d_vp2_pass = false;
 
         const CUIDialogWnd* receiver = pGameSP->MainInputReceiver();
         const bool is_top = receiver == pGameSP->PdaMenu;

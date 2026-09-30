@@ -511,8 +511,12 @@ bool CUILevelMap::OnMouse(float x, float y, EUIMessages mouse_action)
                 const CMapLocation* map_loc = MapWnd()->UnderSpot(real_position, this);
                 if (!map_loc)
                 {
-                    MapWnd()->CreateSpotWindow(real_position, MapName());
-                    return true;
+                    luabind::functor<bool> lua_function;
+                    if (ai().script_engine().functor("ui_pda_addons.get_pda_upgr_spot", lua_function) && lua_function())
+                    {
+                        MapWnd()->CreateSpotWindow(real_position, MapName());
+                        return true;
+                    }
                 }
             }
         }

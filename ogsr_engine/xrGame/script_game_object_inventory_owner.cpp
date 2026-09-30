@@ -283,6 +283,13 @@ bool CScriptGameObject::MarkedDropped(CScriptGameObject* item)
     return (!!inventory_item->GetDropManual());
 }
 
+void CScriptGameObject::ReloadNextAmmo(u32 next_ammo_type)
+{
+    auto weapon = smart_cast<CWeapon*>(&object());
+    ASSERT_FMT(weapon, "[%s]: %s not a CWeapon", __FUNCTION__, object().Name());
+    weapon->ReloadNextAmmo(next_ammo_type);
+}
+
 void CScriptGameObject::UnloadMagazine(bool spawn_ammo, bool unload_gl)
 {
     auto weapon_magazined = smart_cast<CWeaponMagazined*>(&object());
@@ -339,32 +346,112 @@ void CScriptGameObject::DropItemAndTeleport(CScriptGameObject* pItem, Fvector po
 }
 
 //передаче вещи из своего инвентаря в инвентарь партнера
+void DirectEvent(u16 item_id, u16 owner, u16 type, bool = false)
+{
+    NET_Packet P;
+    P.B.count = 0;
+    P.w_u16(item_id);
+    P.w_u16(0);
+    P.r_pos = 0;
+    Level().cl_Process_Event(owner, type, P);
+}
+
 void CScriptGameObject::TransferItem(CScriptGameObject* pItem, CScriptGameObject* pForWho)
 {
-    if (!pItem || !pForWho)
+    CScriptGameObject* item_obj = pItem ? pItem : this;
+    CScriptGameObject* to_obj = pForWho;
+    if (!pForWho)
+    {
+        to_obj = item_obj;
+        item_obj = this;
+    }
+
+    if (!item_obj || !to_obj)
     {
         ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError, "cannot transfer NULL item");
         return;
     }
 
-    CInventoryItem* pIItem = smart_cast<CInventoryItem*>(&pItem->object());
-
-    if (!pIItem)
+    CGameObject* item = &item_obj->object();
+    CGameObject* to = &to_obj->object();
+    if (!smart_cast<CInventoryItem*>(item))
     {
         ai().script_engine().script_log(ScriptStorage::eLuaMessageTypeError, "Cannot transfer not CInventoryItem item");
         return;
     }
 
-    // выбросить у себя
-    NET_Packet P;
-    CGameObject::u_EventGen(P, GE_TRANSFER_REJECT, object().ID());
-    P.w_u16(pIItem->object().ID());
-    CGameObject::u_EventSend(P);
+    LPCSTR item_name = item->cName().c_str();
+    CObject* parent = item->H_Parent();
+    CInventoryOwner* from_owner = smart_cast<CInventoryOwner*>(parent);
+    CInventoryOwner* to_owner = smart_cast<CInventoryOwner*>(to);
 
-    // отдать партнеру
-    CGameObject::u_EventGen(P, GE_TRANSFER_TAKE, pForWho->object().ID());
-    P.w_u16(pIItem->object().ID());
-    CGameObject::u_EventSend(P);
+    u16 parent_id = parent ? parent->ID() : u16(-1);
+    CSE_ALifeObject* se_item = item->alife_object();
+    if (se_item)
+        parent_id = se_item->ID_Parent;
+
+    NET_Packet P;
+    if (parent && parent_id != parent->ID())
+    {
+        parent = parent_id == u16(-1) ? nullptr : Level().Objects.net_Find(parent_id);
+        if (!parent)
+        {
+            if (from_owner)
+                from_owner->EndTransfer();
+            if (to_owner)
+                to_owner->EndTransfer();
+            return;
+        }
+        from_owner = smart_cast<CInventoryOwner*>(parent);
+        DirectEvent(item->ID(), parent_id, GE_TRANSFER_TAKE);
+    }
+
+    if (parent_id == to->ID())
+    {
+        Msg("! #REJECT: invalid transfer, object %s already owned by %s ", item->cName().c_str(), to->cName().c_str());
+    }
+    else
+    {
+        if (from_owner)
+            from_owner->BeginTransfer();
+        if (to_owner)
+            to_owner->BeginTransfer();
+
+        if (parent_id != u16(-1) && this != item_obj)
+        {
+            if (parent->ID() != object().ID())
+                Msg("! #WARNING(transfer_item): owner for %s = %s, but method used for %s ", item_name, parent->cName().c_str(), object().Name());
+
+            CGameObject::u_EventGen(P, GE_TRANSFER_REJECT, parent_id);
+            P.w_u16(item->ID());
+            P.w_u16(0);
+            CGameObject::u_EventSend(P);
+
+            if (se_item && se_item->ID_Parent == u16(-1))
+                DirectEvent(item->ID(), parent_id, GE_TRANSFER_REJECT);
+        }
+
+        R_ASSERT3(item_obj != to_obj, "trying transfer object into self", item_name);
+
+        CGameObject::u_EventGen(P, GE_TRANSFER_TAKE, to->ID());
+        P.w_u16(item->ID());
+        P.w_u16(0);
+        CGameObject::u_EventSend(P);
+
+        if (se_item && to->ID() == se_item->ID_Parent)
+            DirectEvent(item->ID(), to->ID(), GE_TRANSFER_TAKE);
+
+        if (Level().net_msg_ready_size() >= 31)
+        {
+            Level().ClientReceive();
+            Level().ProcessGameEvents();
+        }
+    }
+
+    if (from_owner)
+        from_owner->EndTransfer();
+    if (to_owner)
+        to_owner->EndTransfer();
 }
 
 u32 CScriptGameObject::Money()

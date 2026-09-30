@@ -84,6 +84,8 @@ public:
     virtual void renderable_Render(u32 context_id, IRenderable* root) override;
 
     IC CPolterSpecialAbility* ability() { return (m_flame ? m_flame : m_tele); }
+    void enable_ability(bool flag);
+    bool is_ability_enabled();
 
     IC bool is_hidden() { return state_invisible; }
 
@@ -171,6 +173,8 @@ protected:
     CPoltergeist* m_object;
 
 public:
+    bool m_enabled{true};
+
     CPolterSpecialAbility(CPoltergeist* polter);
     virtual ~CPolterSpecialAbility();
 

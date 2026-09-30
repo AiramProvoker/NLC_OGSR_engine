@@ -116,7 +116,8 @@ CLocatorAPI::archive::xr_sqfs::xr_sqfs(const char* path)
 CLocatorAPI::archive::xr_sqfs::reader::reader(const archive& arc)
 {
     sqfs::sqfs_file_t* f;
-    R_ASSERT(sqfs::sqfs_file_open(&f, arc.path.c_str(), sqfs::SQFS_FILE_OPEN_READ_ONLY | sqfs::SQFS_FILE_OPEN_NO_CHARSET_XFRM) == 0);
+    const char* path_for_sqfs = arc.sqfs_path();
+    R_ASSERT(sqfs::sqfs_file_open(&f, path_for_sqfs, sqfs::SQFS_FILE_OPEN_READ_ONLY | sqfs::SQFS_FILE_OPEN_NO_CHARSET_XFRM) == 0);
     file = xr::wrap_unique(f);
 
     sqfs::sqfs_compressor_t* c;
@@ -255,7 +256,7 @@ CStreamReader* CLocatorAPI::archive::xr_sqfs_stream::open_chunk(u32 chunk_id)
 void CLocatorAPI::archive::open_sqfs()
 {
     type = container::SQFS;
-    fs = xr_new<xr_sqfs>(path.c_str());
+    fs = xr_new<xr_sqfs>(sqfs_path());
 }
 
 void CLocatorAPI::archive::index_dir_sqfs(CLocatorAPI& loc, const char* path, sqfs::sqfs_dir_iterator_t& it) const
@@ -330,7 +331,16 @@ IReader* CLocatorAPI::archive::read_sqfs(const char*, const struct file& desc, u
 
     const auto inode = xr::wrap_unique(inp);
     std::byte* dest = xr_alloc<std::byte>(desc.size_real);
-    R_ASSERT(sqfs::sqfs_data_reader_read(rd.data.get(), inode.get(), 0, dest, static_cast<sqfs::sqfs_u32>(desc.size_real)) == desc.size_real);
+    for (size_t done = 0; done < desc.size_real;)
+    {
+        const int res = sqfs::sqfs_data_reader_read(rd.data.get(), inode.get(), done, dest + done, static_cast<sqfs::sqfs_u32>(desc.size_real - done));
+        if (res < 0)
+            FATAL("sqfs_data_reader_read error=%d at offset=%zu inode=%llu", res, done, static_cast<unsigned long long>(desc.inode));
+        if (res == 0)
+            FATAL("sqfs_data_reader_read вернул 0 до конца файла: прочитано=%zu ожидается=%zu inode=%llu", done, static_cast<size_t>(desc.size_real),
+                  static_cast<unsigned long long>(desc.inode));
+        done += static_cast<size_t>(res);
+    }
 
     return xr_new<CTempReader>(dest, desc.size_real, 0);
 }

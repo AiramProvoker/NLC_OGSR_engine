@@ -17,6 +17,8 @@
 #include "script_binder_object.h"
 #include "script_entity_action.h"
 #include "script_game_object.h"
+#include "WeaponAmmo.h"
+#include "ai/monsters/poltergeist/poltergeist.h"
 #include "script_hit.h"
 #include "script_ini_file.h"
 #include "script_monster_hit_info.h"
@@ -78,6 +80,9 @@ CHitImmunity* get_obj_immunities(CScriptGameObject* script_obj)
     CArtefact* pArt = smart_cast<CArtefact*>(obj);
     if (pArt)
         return &pArt->m_ArtefactHitImmunities;
+    CCustomOutfit* pOutfit = smart_cast<CCustomOutfit*>(obj);
+    if (pOutfit)
+        return pOutfit->cast_hit_immunities();
     return NULL;
 }
 
@@ -171,6 +176,7 @@ class_<CScriptGameObject> script_register_game_object3(class_<CScriptGameObject>
         .def("get_actor", &script_game_object_cast<CActorObject>)
         .def("get_anomaly", &script_game_object_cast<CCustomZone>)
         .def("get_artefact", &script_game_object_cast<CArtefact>)
+        .def("get_ammo", &script_game_object_cast<CWeaponAmmo>)
         .def("get_base_monster", &script_game_object_cast<CBaseMonster>)
         .def("get_container", &script_game_object_cast<CInventoryContainer>)
         .def("get_custom_monster", &script_game_object_cast<CCustomMonster>)
@@ -181,6 +187,7 @@ class_<CScriptGameObject> script_register_game_object3(class_<CScriptGameObject>
         .def("get_inventory_owner", &script_game_object_cast<CInventoryOwner>)
         .def("get_missile", &script_game_object_cast<CMissile>)
         .def("get_outfit", &script_game_object_cast<CCustomOutfit>)
+        .def("get_poltergeist", &script_game_object_cast<CPoltergeist>)
         .def("get_space_restrictor", &script_game_object_cast<CSpaceRestrictor>)
         .def("get_torch", &script_game_object_cast<CTorch>)
         .def("get_weapon", &script_game_object_cast<CWeapon>)
@@ -217,6 +224,7 @@ class_<CScriptGameObject> script_register_game_object3(class_<CScriptGameObject>
 
         .def("setEnabled", &CScriptGameObject::setEnabled)
         .def("setVisible", &CScriptGameObject::setVisible)
+        .def("reload_next_ammo", &CScriptGameObject::ReloadNextAmmo)
 
         .def("actor_can_take", &actor_can_take)
 

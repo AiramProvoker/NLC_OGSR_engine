@@ -194,6 +194,9 @@ public:
     shared_str m_sWpn_launcher_bone;
     shared_str m_sWpn_laser_bone;
     shared_str m_sWpn_flashlight_bone;
+    int m_iSilencerXOffset{}, m_iSilencerYOffset{};
+    bool m_disableDetector{};
+
     xr_vector<shared_str> m_sHud_wpn_scope_bones;
     shared_str m_sHud_wpn_silencer_bone;
     shared_str m_sHud_wpn_launcher_bone;
@@ -250,6 +253,8 @@ protected:
     float m_f3dssHudFov;
 
     bool m_bUseScopeZoom = false;
+    bool m_3dss_gen_zoom_enable{};
+    bool is_alt_aim_enabled{};
     bool m_bUseScopeGrenadeZoom = false;
     bool m_bScopeShowIndicators = true;
     bool m_bIgnoreScopeTexture = false;
@@ -376,6 +381,9 @@ protected:
 
     virtual void FireStart() { CShootingObject::FireStart(); }
     virtual void FireEnd(); // {CShootingObject::FireEnd();}
+    virtual void ForcedFireStart(bool flag);
+    virtual void PerformForcedShot() {}
+    bool m_bForcedFire{};
 
     virtual void Fire2Start();
     virtual void Fire2End();
@@ -520,6 +528,8 @@ public:
     float m_fCurrentCartirdgeDisp;
 
     bool unlimited_ammo();
+    void ReloadNextAmmo(u32 next_ammo_type);
+    void CheckHaveAmmo();
     IC bool can_be_strapped() const { return m_can_be_strapped; };
 
     LPCSTR GetCurrentAmmo_ShortName();

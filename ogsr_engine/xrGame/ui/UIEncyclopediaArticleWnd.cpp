@@ -1,4 +1,6 @@
 #include "stdafx.h"
+#include "script_engine.h"
+#include "../ai_space.h"
 #include "UIEncyclopediaArticleWnd.h"
 #include "UIStatic.h"
 #include "../encyclopedia_article.h"
@@ -47,7 +49,11 @@ void CUIEncyclopediaArticleWnd::SetArticle(CEncyclopediaArticle* article)
         img_x = _max(0.0f, img_x);
         m_UIImage->SetWndPos(img_x, m_UIImage->GetWndPos().y);
     };
-    m_UIText->SetText(*CStringTable().translate(article->data()->text.c_str()));
+    LPCSTR text = *CStringTable().translate(article->data()->text.c_str());
+    luabind::functor<LPCSTR> lua_function;
+    if (ai().script_engine().functor("_G.on_set_article_text", lua_function))
+        text = lua_function(article->data()->text.c_str());
+    m_UIText->SetText(text);
     m_UIText->AdjustHeightToText();
 
     AdjustLauout();

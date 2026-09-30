@@ -234,6 +234,8 @@ void CActor::g_cl_CheckControls(u32 mstate_wf, Fvector& vControlAccel, float& Ju
         // jump
         m_fJumpTime -= dt;
 
+        const float load_k = (GetMass() + GetCarryWeight()) / (GetMass() + MaxCarryWeight());
+
         if ((mstate_wf & mcJump))
         {
             float weight = 0.f;
@@ -244,9 +246,13 @@ void CActor::g_cl_CheckControls(u32 mstate_wf, Fvector& vControlAccel, float& Ju
 
             if (CanJump(weight))
             {
+                float jump_k = conditions().GetPower() / load_k;
+                jump_k = jump_k >= 0.3f ? std::min(jump_k, 1.5f) : 0.3f;
+                character_physics_support()->movement()->SetJumpUpVelocity(jump_k * m_fJumpSpeed);
+
                 mstate_real |= mcJump;
                 m_bJumpKeyPressed = TRUE;
-                Jump = m_fJumpSpeed;
+                Jump = jump_k * m_fJumpSpeed;
                 m_fJumpTime = s_fJumpTime;
 
                 // CActor_on_jump
@@ -365,29 +371,30 @@ void CActor::g_cl_CheckControls(u32 mstate_wf, Fvector& vControlAccel, float& Ju
                 mstate_real &= ~(mcLStrafe + mcRStrafe);
 
             // normalize and analyze crouch and run
+            const float load_speed_k = load_k >= 0.85f ? std::min(load_k, 3.f) : 0.85f;
             float scale = vControlAccel.magnitude();
             if (scale > EPS)
             {
-                scale = m_fWalkAccel / scale;
+                scale = m_fWalkAccel / (scale * load_speed_k);
                 if (bAccelerated)
                     if (mstate_real & mcBack)
-                        scale *= m_fRunBackFactor * m_fExoFactor;
+                        scale *= m_fRunBackFactor * m_fMovementSpeedMultiplier;
                     else
-                        scale *= m_fRunFactor * m_fExoFactor;
+                        scale *= m_fRunFactor * m_fMovementSpeedMultiplier;
                 else if (mstate_real & mcBack)
-                    scale *= m_fWalkBackFactor;
+                    scale *= m_fWalkBackFactor * m_fMovementSpeedMultiplier;
 
                 if (mstate_real & mcCrouch)
-                    scale *= m_fCrouchFactor;
+                    scale *= m_fCrouchFactor * m_fMovementSpeedMultiplier;
                 if (mstate_real & mcClimb)
-                    scale *= m_fClimbFactor;
+                    scale *= m_fClimbFactor * m_fMovementSpeedMultiplier;
                 if (mstate_real & mcSprint)
-                    scale *= m_fSprintFactor * m_fExoFactor;
+                    scale *= m_fSprintFactor * m_fMovementSpeedMultiplier;
 
                 if (mstate_real & (mcLStrafe | mcRStrafe) && !(mstate_real & mcCrouch))
                 {
                     if (bAccelerated)
-                        scale *= m_fRun_StrafeFactor * m_fExoFactor;
+                        scale *= m_fRun_StrafeFactor * m_fMovementSpeedMultiplier;
                     else
                         scale *= m_fWalk_StrafeFactor;
                 }

@@ -30,6 +30,7 @@ class UILoadingScreen : public ILoadingScreen, public CUIWindow
     CUIStatic* loadingLevelDescription;
 
     u32 maxTip;
+    u32 maxRandom_ls{};
 
 public:
     UILoadingScreen();

@@ -78,6 +78,7 @@ public:
     ALife::_SPAWN_ID spawn_id(const ALife::_SPAWN_STORY_ID& spawn_story_id) const;
     //Используется только в луа
     ALife::_SPAWN_ID spawn_id(const char* obj_name) const;
+    const string_unordered_map<shared_str, ALife::_SPAWN_ID>& spawn_ids_by_name() const { return m_spawn_ids_by_name; }
 };
 
 #include "alife_spawn_registry_inline.h"

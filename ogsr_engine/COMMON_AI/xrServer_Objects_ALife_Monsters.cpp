@@ -470,6 +470,20 @@ CHARACTER_REPUTATION_VALUE CSE_ALifeTraderAbstract::Reputation()
     return m_reputation;
 }
 
+#include "xrServer.h"
+
+LPCSTR CSE_ALifeTraderAbstract::character_icon()
+{
+    CCharacterInfo chInfo;
+    CSE_ALifeTraderAbstract* trader;
+    if (ai().get_alife() && ai().get_game_graph())
+        trader = smart_cast<CSE_ALifeTraderAbstract*>(ai().alife().objects().object(base()->ID, true));
+    else
+        trader = smart_cast<CSE_ALifeTraderAbstract*>(Level().Server->ID_to_entity(base()->ID));
+    chInfo.Init(trader);
+    return chInfo.IconName().c_str();
+}
+
 #endif
 
 void CSE_ALifeTraderAbstract::UPDATE_Write(NET_Packet& tNetPacket){};

@@ -336,6 +336,8 @@ void CResourceManager::_DumpMemoryUsage()
     }
 }
 
+ITexture* CResourceManager::CreateTexture(const char* Name) { return _CreateTexture(Name); }
+
 xr_vector<ITexture*> CResourceManager::FindTexture(const char* Name) const
 {
     R_ASSERT(Name && strlen(Name));

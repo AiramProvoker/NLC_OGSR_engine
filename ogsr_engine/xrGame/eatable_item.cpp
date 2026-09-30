@@ -13,6 +13,7 @@
 #include "entity_alive.h"
 #include "EntityCondition.h"
 #include "InventoryOwner.h"
+#include "xrServer_Objects_ALife_Items.h"
 
 CEatableItem::CEatableItem()
 {
@@ -50,6 +51,8 @@ void CEatableItem::Load(LPCSTR section)
 
     m_iStartPortionsNum = pSettings->r_s32(section, "eat_portions_num");
     m_fMaxPowerUpInfluence = READ_IF_EXISTS(pSettings, r_float, section, "eat_max_power", 0.0f);
+    use_for_every_item = READ_IF_EXISTS(pSettings, r_bool, section, "use_for_every_item", false);
+    eat_portions_influence = READ_IF_EXISTS(pSettings, r_bool, section, "eat_portions_influence", false);
     VERIFY(m_iPortionsNum < 10000);
 }
 
@@ -58,10 +61,29 @@ BOOL CEatableItem::net_Spawn(CSE_Abstract* DC)
     if (!inherited::net_Spawn(DC))
         return FALSE;
 
-    m_iPortionsNum = m_iStartPortionsNum;
+    if (auto eatable = smart_cast<CSE_ALifeItemEatable*>(DC))
+    {
+        m_iPortionsNum = eatable->m_portions_num;
+        if (eat_portions_influence)
+        {
+            const float k = float(m_iPortionsNum) / float(m_iStartPortionsNum);
+            m_weight *= k;
+            m_cost = static_cast<int>(std::roundf(float(static_cast<int>(m_cost)) * k));
+        }
+    }
+    else
+        m_iPortionsNum = m_iStartPortionsNum;
 
     return TRUE;
 };
+
+void CEatableItem::net_Export(CSE_Abstract* E)
+{
+    inherited::net_Export(E);
+
+    if (auto eatable = smart_cast<CSE_ALifeItemEatable*>(E))
+        eatable->m_portions_num = m_iPortionsNum;
+}
 
 bool CEatableItem::Useful() const
 {
@@ -108,6 +130,16 @@ void CEatableItem::UseBy(CEntityAlive* entity_alive)
         --(m_iPortionsNum);
     else
         m_iPortionsNum = 0;
+
+    if (eat_portions_influence)
+    {
+        LPCSTR sect = object().cNameSect().c_str();
+        const float weight = READ_IF_EXISTS(pSettings, r_float, sect, "inv_weight", 0.f);
+        const float cost = READ_IF_EXISTS(pSettings, r_float, sect, "cost", 0.f);
+        const float k = float(m_iPortionsNum) / float(m_iStartPortionsNum);
+        m_weight = k * weight;
+        m_cost = static_cast<int>(std::roundf(k * cost));
+    }
 }
 void CEatableItem::ZeroAllEffects()
 {

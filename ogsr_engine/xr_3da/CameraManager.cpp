@@ -307,7 +307,7 @@ void CCameraManager::Update(const Fvector& P, const Fvector& D, const Fvector& N
     VERIFY(dbg_upd_frame != Device.dwFrame); // already updated !!!
     dbg_upd_frame = Device.dwFrame;
 #endif
-    float v = psCamInert;
+    float v = psDeviceFlags.test(rsDisableCamInert) ? 0.f : psCamInert;
 
     // camera
     if (flags & CCameraBase::flPositionRigid)

@@ -82,6 +82,7 @@ struct hud_item_measures
         m_hands_offset_type_aim_gl_normal, // Смотрим в механический прицел если гранатомет присоединен
         m_hands_offset_type_gl_normal_scope, // Смотрим в присоединяемый нетекстурный прицел (будь то 3д прицел или колиматор) если включен "use_scope_zoom" и гранатомет
                                              // присоединен
+        m_hands_offset_type_aim_alt,
         m_hands_offset_type_size
     };
     Fvector m_hands_offset[m_hands_offset_size][m_hands_offset_type_size]{};
@@ -437,6 +438,8 @@ public:
     void update_script_item();
 
     IKinematicsAnimated* Model() { return m_model; }
+    IKinematicsAnimated* Model2() { return m_model_2; }
+    void render_script_item_only(u32 context_id, IRenderable* root);
     const Fmatrix& XFORM() const { return m_transform; }
 
 private:

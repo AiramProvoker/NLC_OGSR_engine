@@ -99,6 +99,17 @@ void CInventoryOwner::reinit()
     CAttachmentOwner::reinit();
     m_item_to_spawn = shared_str();
     m_ammo_in_box_to_spawn = 0;
+    m_silent_take = u16(-1);
+    m_silent_reject = u16(-1);
+}
+
+void CInventoryOwner::BeginTransfer() { m_transfer_flag = true; }
+
+void CInventoryOwner::EndTransfer()
+{
+    m_silent_take = u16(-1);
+    m_silent_reject = u16(-1);
+    m_transfer_flag = false;
 }
 
 // call this after CGameObject::net_Spawn
@@ -288,7 +299,8 @@ void CInventoryOwner::OnItemTake(CInventoryItem* inventory_item)
 {
     CGameObject* object = smart_cast<CGameObject*>(this);
     VERIFY(object);
-    object->callback(GameObject::eOnItemTake)(inventory_item->object().lua_game_object());
+    if (m_silent_take != inventory_item->object().ID() || m_transfer_flag)
+        object->callback(GameObject::eOnItemTake)(inventory_item->object().lua_game_object());
 
     attach(inventory_item);
 
@@ -438,7 +450,8 @@ void CInventoryOwner::OnItemDrop(CInventoryItem* inventory_item)
 {
     CGameObject* object = smart_cast<CGameObject*>(this);
     VERIFY(object);
-    object->callback(GameObject::eOnItemDrop)(inventory_item->object().lua_game_object());
+    if (m_silent_reject != inventory_item->object().ID() || m_transfer_flag)
+        object->callback(GameObject::eOnItemDrop)(inventory_item->object().lua_game_object());
 
     detach(inventory_item);
 }
@@ -520,8 +533,23 @@ void CInventoryOwner::sell_useless_items()
     }
 }
 
-bool CInventoryOwner::AllowItemToTrade(CInventoryItem const* item, EItemPlace place) const
+bool CInventoryOwner::AllowItemToTrade(CInventoryItem const* item, bool check_listed) const
 {
+    const u16 owner_id = smart_cast<const CGameObject*>(item->m_pCurrentInventory->GetOwner())->ID();
+
+    bool using_trade_section = false;
+    luabind::functor<bool> foo;
+    if (ai().script_engine().functor("trade_manager.is_npc_using_trade_section", foo) && owner_id)
+        using_trade_section = foo(owner_id);
+
+    if (check_listed && owner_id && !using_trade_section)
+    {
+        const shared_str& section = item->object().cNameSect();
+        if (!trade_parameters().listed(CTradeParameters::action_sell(0), section))
+            return false;
+        return trade_parameters().enabled(CTradeParameters::action_sell(0), section);
+    }
+
     return (trade_parameters().enabled(CTradeParameters::action_sell(0), item->object().cNameSect()));
 }
 
@@ -562,6 +590,9 @@ float CInventoryOwner::ArtefactsAddWeight(bool first) const
     float add_weight = 0.f;
     for (const auto& it : inventory().m_belt)
     {
+        if (!inventory().AllowAfEffects)
+            return add_weight;
+
         CArtefact* artefact = smart_cast<CArtefact*>(it);
 
         if (artefact && (!Core.Features.test(xrCore::Feature::af_zero_condition) || !fis_zero(artefact->GetCondition())))

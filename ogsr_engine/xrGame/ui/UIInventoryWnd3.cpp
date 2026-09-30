@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "../fl_hook.h"
 #include "UIInventoryWnd.h"
 #include "../actor.h"
 #include "../silencer.h"
@@ -18,6 +19,11 @@
 #include "../CustomOutfit.h"
 #include "../string_table.h"
 #include <regex>
+#include "../CustomDetector.h"
+#include "../SimpleDetectorSHOC.h"
+#include "../ai_space.h"
+#include "../script_engine.h"
+#include "../script_game_object.h"
 
 void CUIInventoryWnd::EatItem(PIItem itm)
 {
@@ -57,7 +63,8 @@ void CUIInventoryWnd::ActivatePropertiesBox()
             auto slot = slots[i];
             if (slot != NO_ACTIVE_SLOT && slot != GRENADE_SLOT)
             {
-                if (!m_pInv->m_slots[slot].m_pIItem || m_pInv->m_slots[slot].m_pIItem != CurrentIItem())
+                if ((!m_pInv->m_slots[slot].m_pIItem || m_pInv->m_slots[slot].m_pIItem != CurrentIItem()) && AllowPutInSlot(CurrentItem(), slot) &&
+                    !smart_cast<CCustomDetector*>(CurrentIItem()) && !smart_cast<CCustomDetectorSHOC*>(CurrentIItem()))
                 {
                     if (multi_slot && Core.Features.test(xrCore::Feature::slots_extend_menu))
                     {
@@ -90,6 +97,11 @@ void CUIInventoryWnd::ActivatePropertiesBox()
             UIPropertiesBox.AddItem("st_move_to_bag", NULL, INVENTORY_TO_BAG_ACTION);
         else
             UIPropertiesBox.AddItem("st_undress_outfit", NULL, INVENTORY_TO_BAG_ACTION);
+        if (pOutfit && fl_hook::blr_on)
+        {
+            UIPropertiesBox.AddItem("st_ballon_remove", NULL, INVENTORY_HANDLE_BATT_TORCH);
+            ++fl_hook::blr_added;
+        }
         bAlreadyDressed = true;
         b_show = true;
     }
@@ -160,24 +172,48 @@ void CUIInventoryWnd::ActivatePropertiesBox()
         }
     }
 
-    LPCSTR _action = nullptr;
+    CUICellItem* cell = CurrentItem();
+    u32 use_count = std::min<u32>(cell->ChildsCount() + 1, 9);
+    if (pEatableItem && !pEatableItem->use_for_every_item)
+        use_count = 1;
 
-    if (pMedkit || pAntirad)
+    for (u32 i = 0; i < use_count; ++i)
     {
-        _action = "st_use";
-    }
-    else if (pEatableItem)
-    {
-        if (pBottleItem)
-            _action = "st_drink";
+        PIItem cur = i == 0 ? CurrentIItem() : (PIItem)cell->Child(i - 1)->m_pData;
+        LPCSTR _action = nullptr;
+
+        if (pMedkit || pAntirad)
+        {
+            _action = "st_use";
+            if (use_count > 1 && cur)
+            {
+                if (luabind::functor<LPCSTR> caption_use; ai().script_engine().functor("_G.caption_use", caption_use))
+                    _action = caption_use(int(i + 1), cur->object().ID());
+            }
+        }
+        else if (pEatableItem)
+        {
+            _action = pBottleItem ? "st_drink" : "st_eat";
+            use_count = 0;
+        }
         else
-            _action = "st_eat";
-    }
+        {
+            if (!cur)
+                break;
+            if (strstr(cur->object().cNameSect().c_str(), "batt_torch"))
+            {
+                UIPropertiesBox.AddItem("st_charge_gps", (void*)cur, INVENTORY_HANDLE_BATT_GPS);
+                UIPropertiesBox.AddItem("st_charge_torch", (void*)cur, INVENTORY_HANDLE_BATT_TORCH);
+                use_count = 0;
+            }
+            continue;
+        }
 
-    if (_action)
-    {
-        UIPropertiesBox.AddItem(_action, NULL, INVENTORY_EAT_ACTION);
-        b_show = true;
+        if (_action)
+        {
+            UIPropertiesBox.AddItem(_action, (void*)cur, INVENTORY_EAT_ACTION);
+            b_show = true;
+        }
     }
 
     bool disallow_drop = (pOutfit && bAlreadyDressed);
@@ -248,7 +284,27 @@ void CUIInventoryWnd::ProcessPropertiesBoxClicked()
             DropCurrentItem(b_all);
         }
         break;
-        case INVENTORY_EAT_ACTION: EatItem(CurrentIItem()); break;
+        case INVENTORY_EAT_ACTION: {
+            auto item = (PIItem)UIPropertiesBox.GetClickedItem()->GetData();
+            EatItem(item ? item : CurrentIItem());
+        }
+        break;
+        case INVENTORY_HANDLE_BATT_TORCH: {
+            auto item = (PIItem)UIPropertiesBox.GetClickedItem()->GetData();
+            if (!item)
+                item = CurrentIItem();
+            if (luabind::functor<void> func; ai().script_engine().functor("_G.batt_torch_charge", func))
+                func(item->object().ID());
+        }
+        break;
+        case INVENTORY_HANDLE_BATT_GPS: {
+            auto item = (PIItem)UIPropertiesBox.GetClickedItem()->GetData();
+            if (!item)
+                item = CurrentIItem();
+            if (luabind::functor<void> func; ai().script_engine().functor("_G.batt_gps_charge", func))
+                func(item->object().ID());
+        }
+        break;
         case INVENTORY_ATTACH_ADDON: AttachAddon((PIItem)(UIPropertiesBox.GetClickedItem()->GetData())); break;
         case INVENTORY_DETACH_SCOPE_ADDON: DetachAddon(*(smart_cast<CWeapon*>(CurrentIItem()))->GetScopeName()); break;
         case INVENTORY_DETACH_SILENCER_ADDON: DetachAddon(*(smart_cast<CWeapon*>(CurrentIItem()))->GetSilencerName()); break;

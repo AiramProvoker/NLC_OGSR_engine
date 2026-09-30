@@ -42,6 +42,7 @@ public:
     Fvector enemy_position;
     u32 saved_state;
     u32 m_anim_factor;
+    bool allow_jump{true};
     u32 m_corpse_use_timeout;
     u32 m_min_life_time;
     u32 m_drive_out_time;

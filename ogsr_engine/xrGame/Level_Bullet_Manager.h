@@ -118,6 +118,8 @@ protected:
 
     //остаток времени, который не был учтен на предыдущем кадре
     u32 m_dwTimeRemainder;
+    u32 m_dwLastWallmarkFrame{};
+    int m_iLastWallmarkObjectID{-1};
 
     //отрисовка трассеров от пуль
     CTracer tracers;

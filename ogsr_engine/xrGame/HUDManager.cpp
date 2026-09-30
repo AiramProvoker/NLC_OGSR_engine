@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "fl_hook.h"
 #include "HUDManager.h"
 #include "hudtarget.h"
 
@@ -11,6 +12,7 @@
 #include "torch.h"
 #include "weapon.h"
 #include "ui/UIMessagesWindow.h"
+#include "game_cl_single.h"
 
 CFontManager::CFontManager()
 {
@@ -323,6 +325,8 @@ extern ENGINE_API BOOL bShowPauseString;
 
 void CHUDManager::RenderUI()
 {
+    fl_hook::CHudRenderUIGuard pda3d_guard;
+
     if (!b_online)
         return;
 
@@ -330,7 +334,7 @@ void CHUDManager::RenderUI()
     {
         HitMarker.Render();
 
-        if (psHUD_Flags.is(HUD_CROSSHAIR | HUD_CROSSHAIR_RT | HUD_CROSSHAIR_RT2))
+        if (psHUD_Flags.is(HUD_CROSSHAIR | HUD_CROSSHAIR_RT | HUD_CROSSHAIR_RT2) && g_SingleGameDifficulty < egdMaster)
             m_pHUDTarget->Render();
     }
 

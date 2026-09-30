@@ -37,6 +37,9 @@ protected:
 protected:
     // Бэкграунд
     CUIStatic* UIMainPdaFrame;
+    shared_str def_back;
+    shared_str model_back;
+    int back_orig_stretch{};
     CUIStatic* m_updatedSectionImage;
     CUIStatic* m_oldSectionImage;
 
@@ -73,7 +76,7 @@ public:
     virtual bool OnKeyboard(int dik, EUIMessages keyboard_action) override;
 
     void SetActiveSubdialog(EPdaTabs section);
-    virtual bool StopAnyMove() { return false; }
+    virtual bool StopAnyMove();
 
     void PdaContentsChanged(pda_section::part type, bool = true, bool = false);
 

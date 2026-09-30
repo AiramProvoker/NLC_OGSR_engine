@@ -57,6 +57,7 @@ public:
     CInifile(IReader*, LPCSTR = 0);
     CInifile(LPCSTR, BOOL ReadOnly = TRUE, BOOL bLoad = TRUE, BOOL SaveAtEnd = TRUE);
 
+    virtual void release();
     virtual ~CInifile();
 
     virtual const Root& sections() const { return DATA; }

@@ -554,6 +554,12 @@ void CAI_Stalker::UpdateCL()
 
     if (g_Alive())
     {
+        if (m_ActiveWeapon && m_ActiveWeapon->GetAmmoElapsed() < 3 && Device.dwFrame > m_dwWeaponUpdated + 20)
+        {
+            m_ActiveWeapon->CheckHaveAmmo();
+            m_ActiveWeapon = nullptr;
+        }
+
         if (g_mt_config.test(mtObjectHandler) && CObjectHandler::planner().initialized())
         {
             Device.add_to_seq_parallel(fastdelegate::MakeDelegate(this, &CAI_Stalker::update_object_handler));

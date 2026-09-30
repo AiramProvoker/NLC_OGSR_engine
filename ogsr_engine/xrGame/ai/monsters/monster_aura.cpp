@@ -32,6 +32,9 @@ monster_aura::~monster_aura() { remove_pp_effector(); }
 
 float monster_aura::calculate() const
 {
+    if (!m_enabled)
+        return 0;
+
     float const distance = m_object->Position().distance_to(Actor()->Position());
 
     float const epsilon = 0.0001f;
@@ -124,6 +127,9 @@ void monster_aura::remove_pp_effector()
 
 float monster_aura::get_post_process_factor() const
 {
+    if (!m_enabled)
+        return 0;
+
     using namespace detail;
     VERIFY(m_pp_highest_at != 0.f);
 

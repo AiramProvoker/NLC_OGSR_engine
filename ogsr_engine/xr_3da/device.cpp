@@ -179,12 +179,12 @@ void CRenderDevice::OnCameraUpdated(bool from_actor)
     ::Render->SetCacheXformOld(mView_old, mProject_old);
 
     mView_hud.build_camera_dir(Fvector{}, vCameraDirection, vCameraTop);
-    mProject_hud.build_projection(deg2rad(psHUD_FOV <= 1.f ? psHUD_FOV * Device.fFOV : psHUD_FOV), fASPECT, HUD_VIEWPORT_NEAR,
+    mProject_hud.build_projection(deg2rad(psHUD_FOV * 67.5f), fASPECT, HUD_VIEWPORT_NEAR,
                                   g_pGamePersistent->Environment().CurrentEnv->far_plane);
     mFullTransform_hud.mul(mProject_hud, mView_hud);
 
     mView_hud2.set(mView);
-    mProject_hud2.build_projection(deg2rad(psHUD_FOV <= 1.f ? psHUD_FOV * Device.fFOV : psHUD_FOV), fASPECT, HUD_VIEWPORT_NEAR,
+    mProject_hud2.build_projection(deg2rad(psHUD_FOV * 67.5f), fASPECT, HUD_VIEWPORT_NEAR,
                                    g_pGamePersistent->Environment().CurrentEnv->far_plane);
     mFullTransform_hud2.mul(mProject_hud2, mView_hud2);
 }

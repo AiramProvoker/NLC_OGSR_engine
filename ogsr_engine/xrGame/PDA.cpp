@@ -65,8 +65,6 @@ void CPda::Load(LPCSTR section)
     else
         CInventoryItemObject::Load(section);
 
-    m_fRadius = pSettings->r_float(section, "radius");
-
     if (!this_is_3d_pda)
         return;
 
@@ -98,25 +96,7 @@ void CPda::shedule_Update(u32 dt)
     {
         CEntityAlive* EA = smart_cast<CEntityAlive*>(H_Parent());
         if (!EA || !EA->g_Alive())
-        {
             TurnOff();
-            return;
-        }
-
-        m_changed = false;
-        feel_touch_update(Position(), m_fRadius);
-        UpdateActiveContacts();
-
-        if (m_changed)
-        {
-            if (HUD().GetUI())
-            {
-                CUIGameSP* pGameSP = smart_cast<CUIGameSP*>(HUD().GetUI()->UIGame());
-                if (pGameSP)
-                    pGameSP->PdaMenu->PdaContentsChanged(pda_section::contacts);
-            }
-            m_changed = false;
-        }
     }
 }
 

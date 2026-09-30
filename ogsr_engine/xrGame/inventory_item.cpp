@@ -50,7 +50,6 @@ CInventoryItem::CInventoryItem()
 
     m_eItemPlace = eItemPlaceUndefined;
     m_Description = "";
-    m_cell_item = NULL;
 
     m_fPsyHealthRestoreSpeed = 0.f;
     m_fRadiationRestoreSpeed = 0.f;
@@ -558,12 +557,12 @@ void CInventoryItem::modify_holder_params(float& range, float& fov) const
     fov *= m_holder_fov_modifier;
 }
 
-bool CInventoryItem::CanTrade() const
+bool CInventoryItem::CanTrade(bool check_listed) const
 {
     bool res = true;
 #pragma todo("Dima to Andy : why CInventoryItem::CanTrade can be called for the item, which doesn't have owner?")
     if (m_pCurrentInventory)
-        res = inventory_owner().AllowItemToTrade(this, m_eItemPlace);
+        res = inventory_owner().AllowItemToTrade(this, check_listed);
 
     return (res && m_flags.test(FCanTrade) && !IsQuestItem());
 }

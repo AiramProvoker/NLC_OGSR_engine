@@ -89,6 +89,7 @@ void CCustomZone::Load(LPCSTR section)
     m_eHitTypeBlowout = ALife::g_tfString2HitType(pSettings->r_string(section, "hit_type"));
 
     IgnoreAny = READ_IF_EXISTS(pSettings, r_bool, section, "ignore_any", false);
+    IgnoreAnomalyDetector = READ_IF_EXISTS(pSettings, r_bool, section, "ignore_anomaly_detector", false);
     IgnoreNonAlive = pSettings->r_bool(section, "ignore_nonalive");
     IgnoreSmall = pSettings->r_bool(section, "ignore_small");
     IgnoreArtefact = pSettings->r_bool(section, "ignore_artefacts");

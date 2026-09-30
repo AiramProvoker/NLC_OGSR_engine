@@ -532,6 +532,7 @@ void CCC_Register()
     CMD3(CCC_Mask, "rs_cam_pos", &psDeviceFlags, rsCameraPos);
 
     CMD3(CCC_Mask, "rs_occ_draw", &psDeviceFlags, rsOcclusionDraw);
+    CMD3(CCC_Mask, "disable_cam_inert", &psDeviceFlags, rsDisableCamInert);
 
     //CMD2(CCC_Gamma, "rs_c_gamma", &ps_gamma);
     //CMD2(CCC_Gamma, "rs_c_brightness", &ps_brightness);

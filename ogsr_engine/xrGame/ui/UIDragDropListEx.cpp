@@ -411,6 +411,7 @@ void CUIDragDropListEx::SetItem(CUICellItem* itm, Ivector2 cell_pos) // start at
     m_container->PlaceItemAtPos(itm, cell_pos);
 
     itm->SetWindowName("cell_item");
+    itm->UpdateItemText();
     Register(itm);
     itm->SetOwnerList(this);
 }
@@ -482,6 +483,7 @@ CUICellContainer::CUICellContainer(CUIDragDropListEx* parent)
 {
     m_pParentDragDropList = parent;
     hShader->create("hud\\fog_of_war", "ui\\ui_grid");
+    hShader0->create("hud\\fog_of_war", "ui\\ui_grid_0");
     m_cellSpacing.set(0, 0);
 }
 
@@ -928,7 +930,7 @@ void CUICellContainer::Draw()
 
     UI()->PushScissor(clientArea);
 
-    UIRender->SetShader(*hShader);
+    UIRender->SetShader(m_pParentDragDropList->GetShowGrid() ? *hShader : *hShader0);
     UIRender->FlushPrimitive();
 
     // draw shown items in range

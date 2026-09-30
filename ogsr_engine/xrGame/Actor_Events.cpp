@@ -38,6 +38,8 @@ void CActor::OnEvent(NET_Packet& P, u16 type)
     case GE_OWNERSHIP_TAKE:
     case GE_TRANSFER_TAKE: {
         P.r_u16(id);
+        if (P.r_elapsed() >= sizeof(u16) && !P.r_u16())
+            m_silent_take = id;
         CObject* O = Level().Objects.net_Find(id);
         if (!O)
         {
@@ -46,7 +48,7 @@ void CActor::OnEvent(NET_Packet& P, u16 type)
         }
 
         CFoodItem* pFood = smart_cast<CFoodItem*>(O);
-        if (pFood)
+        if (pFood && pFood->m_eItemPlace != eItemPlaceSlot)
             pFood->m_eItemPlace = eItemPlaceRuck;
 
         CGameObject* _GO = smart_cast<CGameObject*>(O);
@@ -55,7 +57,7 @@ void CActor::OnEvent(NET_Packet& P, u16 type)
         {
             O->H_SetParent(smart_cast<CObject*>(this));
 
-            inventory().Take(_GO, false, true);
+            inventory().Take(_GO, false, true, type == GE_OWNERSHIP_TAKE);
 
             CUIGameSP* pGameSP = NULL;
             CUI* ui = HUD().GetUI();
@@ -88,6 +90,8 @@ void CActor::OnEvent(NET_Packet& P, u16 type)
     case GE_OWNERSHIP_REJECT:
     case GE_TRANSFER_REJECT: {
         P.r_u16(id);
+        if (P.r_elapsed() >= sizeof(u16) && !P.r_u16())
+            m_silent_reject = id;
         CObject* O = Level().Objects.net_Find(id);
 
         if (!O)

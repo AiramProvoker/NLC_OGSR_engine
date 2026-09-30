@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "fl_hook.h"
 #include "Actor_Flags.h"
 #include "hudmanager.h"
 #ifdef DEBUG
@@ -344,7 +345,7 @@ void CActor::Load(LPCSTR section)
 
     m_hit_slowmo_jump = READ_IF_EXISTS(pSettings, r_bool, section, "hit_slowmo_jump", false);
 
-    m_fExoFactor = 1.0f;
+    m_fMovementSpeedMultiplier = 1.0f;
 
     m_fCamHeightFactor = pSettings->r_float(section, "camera_height_factor");
     character_physics_support()->movement()->SetJumpUpVelocity(m_fJumpSpeed);
@@ -394,7 +395,8 @@ void CActor::Load(LPCSTR section)
     cam_Set(eacFirstEye);
 
     // sheduler
-    shedule.t_min = shedule.t_max = 1;
+    shedule.t_min = READ_IF_EXISTS(pSettings, r_u32, "actor_schedule", "t_min", 1);
+    shedule.t_max = READ_IF_EXISTS(pSettings, r_u32, "actor_schedule", "t_max", 1);
 
     // настройки дисперсии стрельбы
     m_fDispBase = pSettings->r_float(section, "disp_base");
@@ -888,7 +890,7 @@ void CActor::UpdateCL()
     {
         float outfit_cond{-1.f}, wpn_cond{-1.f};
         if (auto outfit = inventory().ItemFromSlot(OUTFIT_SLOT))
-            outfit_cond = outfit->GetCondition();
+            outfit_cond = m_sh_mask_condition < 0.f ? outfit->GetCondition() : m_sh_mask_condition;
         if (auto wpn = inventory().ActiveItem())
             wpn_cond = wpn->GetCondition();
         shader_exports.set_actor_params(Fvector{this->conditions().GetHealth(), outfit_cond, wpn_cond});
@@ -1039,15 +1041,18 @@ void CActor::shedule_Update(u32 DT)
 
         {
             //-----------------------------------------------------
-            mstate_wishful &= ~mcAccel;
+            extern int g_iCrouchState;
+            extern bool g_bAutoClearFWD;
+            if (g_iCrouchState < 2)
+                mstate_wishful &= ~mcAccel;
             mstate_wishful &= ~mcLStrafe;
             mstate_wishful &= ~mcRStrafe;
             mstate_wishful &= ~mcLLookout;
             mstate_wishful &= ~mcRLookout;
-            mstate_wishful &= ~mcFwd;
+            if (g_bAutoClearFWD)
+                mstate_wishful &= ~mcFwd;
             mstate_wishful &= ~mcBack;
-            extern bool g_bAutoClearCrouch;
-            if (g_bAutoClearCrouch)
+            if (!g_iCrouchState)
                 mstate_wishful &= ~mcCrouch;
             //-----------------------------------------------------
         }
@@ -1132,7 +1137,10 @@ void CActor::shedule_Update(u32 DT)
 
     if (can_use && !input_external_handler_installed() && !m_holder && RQ.O && RQ.O->getVisible() && RQ.range < inventory().GetTakeDist())
     {
-        m_pObjectWeLookingAt = smart_cast<CGameObject*>(RQ.O);
+        CGameObject* look_obj = smart_cast<CGameObject*>(RQ.O);
+        if (m_pObjectWeLookingAt != look_obj)
+            callback(GameObject::eSawObject)(look_obj->lua_game_object(), lua_game_object());
+        m_pObjectWeLookingAt = look_obj;
         m_pUsableObject = smart_cast<CUsableScriptObject*>(RQ.O);
         m_pInvBoxWeLookingAt = smart_cast<IInventoryBox*>(RQ.O);
         inventory().m_pTarget = smart_cast<PIItem>(RQ.O);
@@ -1209,6 +1217,12 @@ void CActor::shedule_Update(u32 DT)
 //#include "debug_renderer.h"
 void CActor::renderable_Render(u32 context_id, IRenderable* root)
 {
+    if (fl_hook::bp_ui && cam_active == eacFirstEye)
+    {
+        ++fl_hook::skip_body_n;
+        return;
+    }
+
 //    if (!psAI_Flags.test(aiStalker))
     {
         inherited::renderable_Render(context_id, root);
@@ -1249,7 +1263,15 @@ extern BOOL g_ShowAnimationInfo;
 // HUD
 void CActor::OnHUDDraw(CCustomHUD* hud, u32 context_id, IRenderable* root)
 {
-    g_player_hud->render_hud(context_id, root);
+    fl_hook::hudrc_apply();
+    if (fl_hook::bp_ui)
+    {
+        ++fl_hook::skip_hands_n;
+        g_player_hud->render_script_item_only(context_id, root);
+    }
+    else
+        g_player_hud->render_hud(context_id, root);
+    fl_hook::hudrc_restore();
 
 #if 0 // ndef NDEBUG
 	if (Level().CurrentControlEntity() == this && g_ShowAnimationInfo)
@@ -1380,6 +1402,9 @@ void CActor::UpdateArtefactPanel()
 void CActor::ApplyArtefactEffects(ActorRestoreParams& r, CArtefact* artefact)
 {
     float k = (Core.Features.test(xrCore::Feature::af_zero_condition) && fis_zero(artefact->GetCondition())) ? 0.f : 1.f;
+    const float rad_k = k;
+    if (!inventory().AllowAfEffects)
+        k = 0.f;
 
     r.BleedingRestoreSpeed += artefact->m_fBleedingRestoreSpeed * k;
     r.HealthRestoreSpeed += artefact->m_fHealthRestoreSpeed * k;
@@ -1406,7 +1431,7 @@ void CActor::ApplyArtefactEffects(ActorRestoreParams& r, CArtefact* artefact)
     if (Core.Features.test(xrCore::Feature::objects_radioactive))
     {
         if (artefact->RadiationRestoreSpeed() < 0)
-            r.RadiationRestoreSpeed += artefact->RadiationRestoreSpeed() * k;
+            r.RadiationRestoreSpeed += artefact->RadiationRestoreSpeed() * rad_k;
     }
     else
     {
@@ -1414,12 +1439,12 @@ void CActor::ApplyArtefactEffects(ActorRestoreParams& r, CArtefact* artefact)
         {
             float new_rs = HitArtefactsOnBelt(artefact->RadiationRestoreSpeed(), ALife::eHitTypeRadiation, true);
             if (new_rs > artefact->RadiationRestoreSpeed())
-                r.RadiationRestoreSpeed += new_rs * k;
+                r.RadiationRestoreSpeed += new_rs * rad_k;
             else
-                r.RadiationRestoreSpeed += artefact->RadiationRestoreSpeed() * k;
+                r.RadiationRestoreSpeed += artefact->RadiationRestoreSpeed() * rad_k;
         }
         else
-            r.RadiationRestoreSpeed += artefact->RadiationRestoreSpeed() * k;
+            r.RadiationRestoreSpeed += artefact->RadiationRestoreSpeed() * rad_k;
     }
 }
 
@@ -1437,6 +1462,9 @@ ActorRestoreParams CActor::ActiveArtefactsOnBelt()
             ApplyArtefactEffects(r, artefact);
         }
     }
+
+    if (r.RadiationRestoreSpeed < 0.f && !inventory().AllowAfEffects)
+        r.RadiationRestoreSpeed = 0.f;
 
     if (Core.Features.test(xrCore::Feature::objects_radioactive))
     {
@@ -1579,37 +1607,43 @@ void CActor::UpdateArtefactsOnBelt()
 float CActor::HitArtefactsOnBelt(float hit_power, ALife::EHitType hit_type, bool belt_only)
 {
     float res_hit_power_k = 1.0f;
-    float _af_count = 0.0f;
+    float diminish = 0.5f;
     for (TIItemContainer::iterator it = inventory().m_belt.begin(); inventory().m_belt.end() != it; ++it)
     {
         CArtefact* artefact = smart_cast<CArtefact*>(*it);
-        if (artefact)
+        if (!artefact)
+            continue;
+        if (Core.Features.test(xrCore::Feature::af_zero_condition) && fis_zero(artefact->GetCondition()))
+            continue;
+        if (!inventory().AllowAfEffects)
+            continue;
+
+        float k = artefact->m_ArtefactHitImmunities.AffectHit(1.0f, hit_type);
+        k = k >= 0.5f ? std::min(k, 2.f) : 0.5f;
+
+        const float delta = k - 1.f;
+        if (_abs(delta) < EPS_L)
+            continue;
+
+        if (k >= 1.f)
         {
-            if (!Core.Features.test(xrCore::Feature::af_zero_condition) || !fis_zero(artefact->GetCondition()))
-            {
-                res_hit_power_k += artefact->m_ArtefactHitImmunities.AffectHit(1.0f, hit_type);
-                _af_count += 1.0f;
-            }
+            if (k > 1.f)
+                res_hit_power_k += delta;
         }
-    }
-    // учет иммунитета от шлема
-    PIItem helm = inventory().m_slots[HELMET_SLOT].m_pIItem;
-    if (helm && !belt_only)
-    {
-        CArtefact* helmet = smart_cast<CArtefact*>(helm);
-        if (helmet)
+        else
         {
-            if (!Core.Features.test(xrCore::Feature::af_zero_condition) || !fis_zero(helmet->GetCondition()))
+            const float dec = 1.f - k;
+            if (res_hit_power_k - dec >= 0.5f)
+                res_hit_power_k -= dec;
+            else
             {
-                res_hit_power_k += helmet->m_ArtefactHitImmunities.AffectHit(1.0f, hit_type);
-                _af_count += 1.0f;
+                res_hit_power_k -= dec * diminish;
+                diminish *= diminish;
             }
         }
     }
 
-    res_hit_power_k -= _af_count;
-
-    return res_hit_power_k > 0 ? res_hit_power_k * hit_power : 0;
+    return res_hit_power_k * hit_power;
 }
 
 Fvector CActor::GetMissileOffset() const { return m_vMissileOffset; }

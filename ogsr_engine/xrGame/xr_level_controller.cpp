@@ -38,7 +38,7 @@ xr_vector<_action> actions = {
 
                                                                                                     DEF_ACTION("quick_save", kQUICK_SAVE) DEF_ACTION("quick_load", kQUICK_LOAD)
 
-                                                                                                        DEF_ACTION("hide_hud", kHIDEHUD) DEF_ACTION("show_hud", kSHOWHUD)
+                                                                                                        DEF_ACTION("hide_hud", kHIDEHUD) DEF_ACTION("show_hud", kSHOWHUD) DEF_ACTION("fwd_toggle", kFWD_TOGGLE) DEF_ACTION("wpn_alt_aim", kWPN_ALT_AIM) DEF_ACTION("kick", kKICK) DEF_ACTION("torch_mode", kTORCH_MODE) DEF_ACTION("pda_clock", kPDA_CLOCK)
 };
 
 xr_vector<_binding> g_key_bindings;

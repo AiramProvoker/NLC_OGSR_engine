@@ -108,6 +108,8 @@ void CLevel::IR_OnMouseMove(int dx, int dy)
 extern bool g_block_pause;
 extern bool g_block_all_except_movement;
 
+static u32 pause_cooldown{};
+
 void CLevel::IR_OnKeyboardPress(int key)
 {
     if (CImGuiEditor::Get().Editor_KeyPress(key))
@@ -139,17 +141,26 @@ void CLevel::IR_OnKeyboardPress(int key)
             if (HUD().GetUI()->MainInputReceiver()->IR_OnKeyboardPress(key))
                 return; // special case for mp and main_menu
 
-            if (MainMenu()->IsActive() || !Device.Paused())
+            if (MainMenu()->IsActive() || (!Device.Paused() && Device.dwTimeContinual - pause_cooldown > 1000))
+            {
+                pause_cooldown = Device.dwTimeContinual;
                 HUD().GetUI()->StartStopMenu(HUD().GetUI()->MainInputReceiver(), true);
+            }
         }
         else
+        {
+            if (Device.dwTimeContinual - pause_cooldown <= 1000)
+                return;
+            pause_cooldown = Device.dwTimeContinual;
             Console->Execute("main_menu");
+        }
         return;
         }
 
     case kPAUSE:
-        if (!g_block_pause)
+        if (!g_block_pause && Device.dwTimeContinual - pause_cooldown > 1000)
         {
+            pause_cooldown = Device.dwTimeContinual;
             Device.Pause(!Device.Paused(), TRUE, TRUE, "li_pause_key");
         }
         return;

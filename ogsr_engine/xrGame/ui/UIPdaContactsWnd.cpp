@@ -78,25 +78,7 @@ void CUIPdaContactsWnd::Init()
     xml_init.InitAutoStatic(uiXml, "right_auto_static", UIRightFrame);
 }
 
-void CUIPdaContactsWnd::Update()
-{
-    if (TRUE == m_flags.test(flNeedUpdate))
-    {
-        RemoveAll();
-
-        CPda* pPda = Actor()->GetPDA();
-        if (!pPda)
-            return;
-
-        const auto m_pda_list = pPda->ActivePDAContacts();
-
-        for (const auto& [id, pda] : m_pda_list)
-            AddContact(pda, id);
-
-        m_flags.set(flNeedUpdate, FALSE);
-    }
-    inherited::Update();
-}
+void CUIPdaContactsWnd::Update() { inherited::Update(); }
 
 void CUIPdaContactsWnd::AddContact(CPda* pda, u16 owner_id)
 {
@@ -138,11 +120,7 @@ void CUIPdaContactsWnd::RemoveAll()
 
 void CUIPdaContactsWnd::Reload() { m_flags.set(flNeedUpdate, TRUE); }
 
-void CUIPdaContactsWnd::Reset()
-{
-    inherited::Reset();
-    Reload();
-}
+void CUIPdaContactsWnd::Reset() { inherited::Reset(); }
 
 CUIPdaContactItem::~CUIPdaContactItem() {}
 

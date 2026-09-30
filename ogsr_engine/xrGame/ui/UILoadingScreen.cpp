@@ -53,6 +53,7 @@ void UILoadingScreen::Initialize()
     loadingTip = UIHelper::CreateStatic(uiXml, "loading_tip", this, false);
 
     maxTip = uiXml.ReadAttribInt("loading_tip", 0, "number_of_tips", maxTip);
+    maxRandom_ls = uiXml.ReadAttribInt("loading_logo", 0, "max_random_ls", 0);
 
     loadingLevelName = UIHelper::CreateStatic(uiXml, "loading_level_name", this, false);
     loadingLevelDescription = UIHelper::CreateStatic(uiXml, "loading_level_description", this, false);
@@ -101,7 +102,16 @@ void UILoadingScreen::SetLevelLogo(const char* name)
     std::scoped_lock<decltype(loadingLock)> lock(loadingLock);
 
     if (loadingLogo)
-        loadingLogo->InitTexture(name);
+    {
+        if (maxRandom_ls)
+        {
+            string512 buff;
+            xr_sprintf(buff, "ui\\ui_l%d", Random.randI(1, maxRandom_ls));
+            loadingLogo->InitTexture(buff);
+        }
+        else
+            loadingLogo->InitTexture(name);
+    }
 }
 
 void UILoadingScreen::SetLevelText(const char* name)

@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "script_engine.h"
 #include "GameObject.h"
 #include "PhysicsShell.h"
 #include "ai_space.h"
@@ -228,6 +229,12 @@ BOOL CGameObject::net_Spawn(CSE_Abstract* DC)
 
     setID(E->ID);
     //	R_ASSERT(Level().Objects.net_Find(E->ID) == NULL);
+
+    {
+        luabind::functor<void> lua_function;
+        if (ai().script_engine().functor("_G.on_game_object_net_spawn", lua_function))
+            lua_function(ID());
+    }
 
     const CSE_Visual* visual = smart_cast<const CSE_Visual*>(E);
     if (visual)

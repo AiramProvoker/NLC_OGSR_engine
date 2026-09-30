@@ -646,10 +646,22 @@ void CUITradeWnd::FillList(TIItemContainer& cont, CUIDragDropListEx& dragDropLis
     for (; it != it_e; ++it)
     {
         CInventoryItem* item = *it;
+        const bool canTrade = CanMoveToOther(item, our);
+
+        if (pSettings->line_exist("engine_callbacks", "actor_on_item_before_show_in_trade"))
+        {
+            const std::string callback = pSettings->r_string("engine_callbacks", "actor_on_item_before_show_in_trade");
+            if (luabind::functor<bool> func; ai().script_engine().functor(callback.c_str(), func))
+                if (!func(item->object().lua_game_object(), our, canTrade))
+                    continue;
+        }
+
+        if ((psActorFlags.test(AF_HIDE_UNTRADABLE_ITEMS) && !canTrade) || item->m_flags.test(CInventoryItem::FIHiddenForInventory))
+            continue;
+
         CUICellItem* itm = create_cell_item(item);
         if (item->m_highlight_equipped)
             itm->m_select_equipped = true;
-        bool canTrade = CanMoveToOther(item, our);
         ColorizeItem(itm, canTrade, itm->m_select_equipped);
         dragDropList.SetItem(itm);
     }

@@ -7,6 +7,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "fl_hook.h"
 #include "restricted_object.h"
 #include "space_restriction_manager.h"
 #include "xrServer_Objects_ALife_Monsters.h"
@@ -71,7 +72,9 @@ BOOL CRestrictedObject::net_Spawn(CSE_Abstract* data)
         construct_string(temp1, monster->m_dynamic_in_restrictions, monster);
     }
 
+    const bool brz_tracked = fl_hook::brz_net_spawn_begin(data);
     Level().space_restriction_manager().restrict(monster->ID, temp0, temp1);
+    fl_hook::brz_net_spawn_end(brz_tracked);
 
     actual(true);
 

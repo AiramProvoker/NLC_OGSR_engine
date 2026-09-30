@@ -244,6 +244,138 @@ void CLocatorAPI::RegisterFolderHierarchy(LPCSTR folder_path)
 
 /* Archives */
 
+constexpr u32 OBF_MAGIC = 0x5A5A5A5A;
+
+#pragma pack(push, 1)
+struct PreHeader
+{
+    u32 pre_magic;
+    u8 version;
+    u8 flags;
+    u16 key_id;
+    u32 reserved;
+};
+#pragma pack(pop)
+
+static bool create_temp_slice_deobf(const char* src_path, s64 start_offset, u16 key_id, u8 flags, u32 block_size, char* out_tmp_path)
+{
+    Msg("[%s] create_tmp: src='%s' start=%llu key=%u flags=0x%02x block_size=%u", __FUNCTION__, src_path, start_offset, key_id, flags, block_size);
+
+    char tmp_dir[MAX_PATH]{};
+    if (!GetTempPath(MAX_PATH, tmp_dir))
+        return false;
+
+    char tmp_name[MAX_PATH]{};
+    if (!GetTempFileName(tmp_dir, "sqf", 0, tmp_name))
+        return false;
+
+    HANDLE hSrc = CreateFile(src_path, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (hSrc == INVALID_HANDLE_VALUE)
+    {
+        DeleteFile(tmp_name);
+        return false;
+    }
+
+    LARGE_INTEGER liSize{};
+    if (!GetFileSizeEx(hSrc, &liSize))
+    {
+        CloseHandle(hSrc);
+        DeleteFile(tmp_name);
+        return false;
+    }
+
+    const u64 src_size = liSize.QuadPart;
+    Msg("[%s] src_size=%llu; will copy from offset=%llu to end=%llu", __FUNCTION__, src_size, start_offset, src_size - start_offset);
+
+    if (u64(start_offset) >= src_size)
+    {
+        CloseHandle(hSrc);
+        DeleteFile(tmp_name);
+        return false;
+    }
+
+    HANDLE hDst = CreateFile(tmp_name, GENERIC_READ | GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_SEQUENTIAL_SCAN, nullptr);
+    if (hDst == INVALID_HANDLE_VALUE)
+    {
+        CloseHandle(hSrc);
+        DeleteFile(tmp_name);
+        return false;
+    }
+
+    LARGE_INTEGER start{};
+    start.QuadPart = start_offset;
+    if (!SetFilePointerEx(hSrc, start, nullptr, FILE_BEGIN))
+    {
+        CloseHandle(hSrc);
+        CloseHandle(hDst);
+        DeleteFile(tmp_name);
+        return false;
+    }
+
+    constexpr u32 buf_size = 0x10000;
+    constexpr u32 superblock_size = 0x60;
+    auto* buf = static_cast<u8*>(_aligned_malloc(buf_size, 32));
+    std::memset(buf, 0, buf_size);
+
+    bool ok = false;
+    DWORD readed = 0, written = 0;
+    if (ReadFile(hSrc, buf, superblock_size, &readed, nullptr) && readed && WriteFile(hDst, buf, readed, &written, nullptr) && written == readed)
+    {
+        ok = true;
+        const bool xor_enabled = flags & 1;
+        const u64 total = src_size - start_offset;
+        for (u64 pos = 0; pos < total; pos += readed)
+        {
+            const DWORD to_read = total - pos < buf_size ? DWORD(total - pos) : buf_size;
+            if (!ReadFile(hSrc, buf, to_read, &readed, nullptr) || !readed)
+                break;
+
+            if (xor_enabled && block_size)
+            {
+                for (u32 done = 0; done < readed;)
+                {
+                    const u64 p = pos + done;
+                    const u32 in_block = u32(p % block_size);
+                    const u32 len = std::min<u32>(readed - done, block_size - in_block);
+
+                    u32 t = key_id ^ (0x9E3779B9u * u32(p / block_size));
+                    t ^= t >> 16;
+                    u32 x = 0x85EBCA6Bu * t;
+                    x ^= x << 13;
+                    const u32 kw = x - 0x3D4D51CBu;
+
+                    for (u32 j = 0; j < len; ++j)
+                        buf[done + j] ^= u8(kw >> (8 * ((in_block + j) & 3)));
+
+                    done += len;
+                }
+            }
+
+            if (!WriteFile(hDst, buf, readed, &written, nullptr) || written != readed)
+            {
+                ok = false;
+                break;
+            }
+        }
+    }
+
+    _aligned_free(buf);
+
+    if (!ok)
+    {
+        CloseHandle(hSrc);
+        CloseHandle(hDst);
+        DeleteFile(tmp_name);
+        return false;
+    }
+
+    FlushFileBuffers(hDst);
+    CloseHandle(hDst);
+    CloseHandle(hSrc);
+    xr_strcpy(out_tmp_path, MAX_PATH, tmp_name);
+    return true;
+}
+
 void CLocatorAPI::archive::open()
 {
     // Open the file
@@ -265,6 +397,60 @@ void CLocatorAPI::archive::open()
     DWORD read_byte;
     bool res = ReadFile(hSrcFile, &magic, 4, &read_byte, nullptr);
     R_ASSERT(res && read_byte == sizeof(u32), path.c_str(), Debug.error2string(GetLastError()));
+
+    if (magic == OBF_MAGIC)
+    {
+        obf_enabled = true;
+        obf_data_offset = sizeof(PreHeader);
+
+        PreHeader ph{};
+        ph.pre_magic = magic;
+        constexpr DWORD rem = sizeof(PreHeader) - sizeof(u32);
+        res = ReadFile(hSrcFile, &ph.version, rem, &read_byte, nullptr);
+        R_ASSERT(res && read_byte == rem, path.c_str(), Debug.error2string(GetLastError()));
+
+        obf_flags = ph.flags;
+        obf_key_id = ph.key_id;
+
+        LARGE_INTEGER pos{};
+        pos.QuadPart = obf_data_offset + 12;
+        bool ok = SetFilePointerEx(hSrcFile, pos, nullptr, FILE_BEGIN);
+        R_ASSERT(ok, path.c_str(), Debug.error2string(GetLastError()));
+
+        u32 bs = 0;
+        if (ReadFile(hSrcFile, &bs, sizeof(bs), &read_byte, nullptr) && read_byte == sizeof(bs) && bs)
+            obf_block_size = bs;
+        else
+            obf_block_size = 0x20000;
+
+        pos.QuadPart = obf_data_offset;
+        ok = SetFilePointerEx(hSrcFile, pos, nullptr, FILE_BEGIN);
+        R_ASSERT(ok, path.c_str(), Debug.error2string(GetLastError()));
+
+        Msg("[%s] Obf archive detected: key=%u flags=0x%02x block_size=%u start_offset=%lld", __FUNCTION__, obf_key_id, obf_flags, obf_block_size, obf_data_offset);
+
+        if (!obf_has_tmp)
+        {
+            if (create_temp_slice_deobf(path.c_str(), obf_data_offset, obf_key_id, obf_flags, obf_block_size, obf_tmp_path))
+            {
+                obf_has_tmp = true;
+                Msg("[%s] Created temp slice: %s", __FUNCTION__, obf_tmp_path);
+            }
+            else
+            {
+                Msg("[%s] Failed to create temp slice for %s", __FUNCTION__, path.c_str());
+                R_ASSERT2(false, "Cannot create temp slice for obf archive");
+            }
+        }
+
+        open_sqfs();
+        return;
+    }
+
+    obf_enabled = false;
+    obf_data_offset = 0;
+    dwPtr = SetFilePointer(hSrcFile, 0, nullptr, FILE_BEGIN);
+    R_ASSERT(dwPtr != INVALID_SET_FILE_POINTER, path.c_str(), Debug.error2string(GetLastError()));
 
     if (magic == SQFS_MAGIC)
         open_sqfs();
@@ -301,6 +487,16 @@ void CLocatorAPI::archive::close()
         close_sqfs();
     else
         close_db();
+
+    if (obf_has_tmp)
+    {
+        if (obf_tmp_path[0])
+        {
+            DeleteFile(obf_tmp_path);
+            obf_tmp_path[0] = 0;
+        }
+        obf_has_tmp = false;
+    }
 
     CloseHandle(hSrcFile);
     hSrcFile = nullptr;

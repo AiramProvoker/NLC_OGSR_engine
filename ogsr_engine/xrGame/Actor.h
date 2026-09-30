@@ -456,10 +456,8 @@ public:
 
     IC float GetJumpSpeed() const { return m_fJumpSpeed; }
     IC float GetWalkAccel() const { return m_fWalkAccel; }
-    IC float GetExoFactor() const { return m_fExoFactor; }
     IC void SetJumpSpeed(float _factor) { m_fJumpSpeed = _factor; }
     IC void SetWalkAccel(float _factor) { m_fWalkAccel = _factor; }
-    IC void SetExoFactor(float _factor) { m_fExoFactor = _factor; }
 
 protected:
     u32 mstate_wishful;
@@ -480,7 +478,12 @@ protected:
     float m_fWalk_StrafeFactor;
     float m_fRun_StrafeFactor;
 
-    float m_fExoFactor;
+public:
+    float m_fMovementSpeedMultiplier;
+    float m_sh_mask_condition{-1.f};
+    bool can_switch_nv{true};
+
+protected:
     float m_fLookoutAngle;
     //////////////////////////////////////////////////////////////////////////
     // User input/output

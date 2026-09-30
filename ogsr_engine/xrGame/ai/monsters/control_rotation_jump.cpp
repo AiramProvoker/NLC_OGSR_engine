@@ -45,8 +45,8 @@ void CControlRotationJump::on_release()
     m_man->unlock(this, ControlCom::eControlPath);
 
     SControlDirectionData* ctrl_data_dir = (SControlDirectionData*)m_man->data(this, ControlCom::eControlDir);
-    VERIFY(ctrl_data_dir);
-    ctrl_data_dir->linear_dependency = true;
+    if (ctrl_data_dir)
+        ctrl_data_dir->linear_dependency = true;
 
     m_man->release_pure(this);
     m_man->unsubscribe(this, ControlCom::eventAnimationEnd);

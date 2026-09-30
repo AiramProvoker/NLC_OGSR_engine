@@ -79,6 +79,9 @@ void CUIInventoryWnd::Init()
     AttachChild(&UIDescrWnd);
     xml_init.InitStatic(uiXml, "descr_static", 0, &UIDescrWnd);
 
+    AttachChild(&UIAccumStatic);
+    xml_init.InitStatic(uiXml, "accum_static", 0, &UIAccumStatic);
+
     UIDescrWnd.AttachChild(&UIItemInfo);
     UIItemInfo.Init(0, 0, UIDescrWnd.GetWidth(), UIDescrWnd.GetHeight(), INVENTORY_ITEM_XML);
 
@@ -186,6 +189,30 @@ void CUIInventoryWnd::Init()
         BindDragDropListEnents(m_pUITorchList);
     }
 
+    m_pUISlotQuickAccessList_0 = xr_new<CUIDragDropListEx>();
+    AttachChild(m_pUISlotQuickAccessList_0);
+    m_pUISlotQuickAccessList_0->SetAutoDelete(true);
+    xml_init.InitDragDropListEx(uiXml, "dragdrop_slot_quick_access_0", 0, m_pUISlotQuickAccessList_0);
+    BindDragDropListEnents(m_pUISlotQuickAccessList_0);
+
+    m_pUISlotQuickAccessList_1 = xr_new<CUIDragDropListEx>();
+    AttachChild(m_pUISlotQuickAccessList_1);
+    m_pUISlotQuickAccessList_1->SetAutoDelete(true);
+    xml_init.InitDragDropListEx(uiXml, "dragdrop_slot_quick_access_1", 0, m_pUISlotQuickAccessList_1);
+    BindDragDropListEnents(m_pUISlotQuickAccessList_1);
+
+    m_pUISlotQuickAccessList_2 = xr_new<CUIDragDropListEx>();
+    AttachChild(m_pUISlotQuickAccessList_2);
+    m_pUISlotQuickAccessList_2->SetAutoDelete(true);
+    xml_init.InitDragDropListEx(uiXml, "dragdrop_slot_quick_access_2", 0, m_pUISlotQuickAccessList_2);
+    BindDragDropListEnents(m_pUISlotQuickAccessList_2);
+
+    m_pUISlotQuickAccessList_3 = xr_new<CUIDragDropListEx>();
+    AttachChild(m_pUISlotQuickAccessList_3);
+    m_pUISlotQuickAccessList_3->SetAutoDelete(true);
+    xml_init.InitDragDropListEx(uiXml, "dragdrop_slot_quick_access_3", 0, m_pUISlotQuickAccessList_3);
+    BindDragDropListEnents(m_pUISlotQuickAccessList_3);
+
     for (u8 i = 0; i < SLOTS_TOTAL; i++)
         m_slots_array[i] = NULL;
     m_slots_array[OUTFIT_SLOT] = m_pUIOutfitList;
@@ -202,6 +229,10 @@ void CUIInventoryWnd::Init()
         m_slots_array[DETECTOR_SLOT] = m_pUIDetectorList;
         m_slots_array[TORCH_SLOT] = m_pUITorchList;
     }
+    m_slots_array[SLOT_QUICK_ACCESS_0] = m_pUISlotQuickAccessList_0;
+    m_slots_array[SLOT_QUICK_ACCESS_1] = m_pUISlotQuickAccessList_1;
+    m_slots_array[SLOT_QUICK_ACCESS_2] = m_pUISlotQuickAccessList_2;
+    m_slots_array[SLOT_QUICK_ACCESS_3] = m_pUISlotQuickAccessList_3;
 
     // pop-up menu
     AttachChild(&UIPropertiesBox);

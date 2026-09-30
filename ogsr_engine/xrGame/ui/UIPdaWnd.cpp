@@ -1,4 +1,8 @@
 #include "stdafx.h"
+#include "../fl_hook.h"
+#include "../Actor_Flags.h"
+#include "../PDA.h"
+#include "../inventory.h"
 #include "UIPdaWnd.h"
 #include "../Pda.h"
 
@@ -85,6 +89,9 @@ void CUIPdaWnd::Init()
     UIMainPdaFrame->SetAutoDelete(true);
     AttachChild(UIMainPdaFrame);
     xml_init.InitStatic(uiXml, "background_static", 0, UIMainPdaFrame);
+    def_back = uiXml.ReadAttrib("background_static", 0, "def_back", "");
+    model_back = uiXml.ReadAttrib("background_static", 0, "model_back", "");
+    back_orig_stretch = uiXml.ReadAttribInt("background_static", 0, "stretch", 0);
 
     //Элементы автоматического добавления
     xml_init.InitAutoStatic(uiXml, "auto_static", this);
@@ -286,8 +293,20 @@ void CUIPdaWnd::MouseMovement(float x, float y)
 
 void CUIPdaWnd::Show()
 {
-    if (Core.Features.test(xrCore::Feature::more_hide_weapon))
+    if (Core.Features.test(xrCore::Feature::more_hide_weapon) && !psActorFlags.test(AF_3D_PDA))
         Actor()->SetWeaponHideState(INV_STATE_BLOCK_ALL, true);
+
+    auto pda = smart_cast<CPda*>(Actor()->inventory().ItemFromSlot(PDA_SLOT));
+    if (pda && pda->Is3DPDA() && psActorFlags.test(AF_3D_PDA) && model_back.size())
+    {
+        UIMainPdaFrame->SetStretchTexture(false);
+        UIMainPdaFrame->InitTexture(model_back.c_str());
+    }
+    else if (def_back.size())
+    {
+        UIMainPdaFrame->SetStretchTexture(back_orig_stretch == 1);
+        UIMainPdaFrame->InitTexture(def_back.c_str());
+    }
 
     InventoryUtilities::SendInfoToActor("ui_pda");
 
@@ -301,7 +320,7 @@ void CUIPdaWnd::Hide()
     InventoryUtilities::SendInfoToActor("ui_pda_hide");
     HUD().GetUI()->UIMainIngameWnd->SetFlashIconState_(CUIMainIngameWnd::efiPdaTask, false);
 
-    if (Core.Features.test(xrCore::Feature::more_hide_weapon))
+    if (Core.Features.test(xrCore::Feature::more_hide_weapon) && !psActorFlags.test(AF_3D_PDA))
         Actor()->SetWeaponHideState(INV_STATE_BLOCK_ALL, false);
 }
 
@@ -385,6 +404,8 @@ void CUIPdaWnd::SetActiveSubdialog(EPdaTabs section)
 void CUIPdaWnd::Draw()
 {
     static u32 last_frame{};
+    if (fl_hook::pda3d_draw_hack(this, last_frame))
+        return;
     if (last_frame == Device.dwFrame)
         return;
     last_frame = Device.dwFrame;
@@ -392,6 +413,8 @@ void CUIPdaWnd::Draw()
     inherited::Draw();
     DrawUpdatedSections();
 }
+
+bool CUIPdaWnd::StopAnyMove() { return fl_hook::pda3d_freeze; }
 
 void CUIPdaWnd::PdaContentsChanged(pda_section::part type, bool flash, bool force_update)
 {

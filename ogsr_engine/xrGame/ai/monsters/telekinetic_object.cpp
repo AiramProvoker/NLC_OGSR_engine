@@ -49,6 +49,18 @@ bool CTelekineticObject::init(CTelekinesis* tele, CPhysicsShellHolder* obj, floa
     return true;
 }
 
+bool CTelekineticObject::init_by_id(u16 id, float s, float h, u32 ttk, bool rot)
+{
+    CPhysicsShellHolder* obj = id != u16(-1) ? smart_cast<CPhysicsShellHolder*>(Level().Objects.net_Find(id)) : nullptr;
+    if (!obj)
+    {
+        Msg("[%s] casting to CPhysicsShellHolder FAILED", __FUNCTION__);
+        return false;
+    }
+
+    return init(nullptr, obj, s, h, ttk, rot);
+}
+
 void CTelekineticObject::set_sound(const ref_sound& snd_hold, const ref_sound& snd_throw)
 {
     sound_hold.clone(snd_hold, st_Effect, sg_SourceType);
@@ -279,4 +291,17 @@ void CTelekineticObject::update_hold_sound()
         sound_hold.set_position(object->Position());
     else
         sound_hold.play_at_pos(object, object->Position());
+}
+
+using namespace luabind;
+
+void CTelekineticObject::script_register(lua_State* L)
+{
+    module(L)[class_<CTelekineticObject>("tele_object")
+                  .def("init_by_id", &CTelekineticObject::init_by_id)
+                  .def("raise", &CTelekineticObject::raise)
+                  .def("keep", &CTelekineticObject::keep)
+                  .def("rotate", &CTelekineticObject::rotate)
+                  .def("release", &CTelekineticObject::release)
+                  .def_readwrite("target_height", &CTelekineticObject::target_height)];
 }

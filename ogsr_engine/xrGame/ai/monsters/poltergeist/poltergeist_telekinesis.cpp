@@ -40,7 +40,7 @@ void CPolterTele::update_schedule()
 {
     inherited::update_schedule();
 
-    if (!m_object->g_Alive() || !Actor() || !Actor()->g_Alive())
+    if (!m_object->g_Alive() || !Actor() || !Actor()->g_Alive() || !m_enabled)
         return;
 
     Fvector const actor_pos = Actor()->Position();

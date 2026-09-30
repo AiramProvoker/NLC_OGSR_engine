@@ -19,6 +19,8 @@ public:
 
     NET_Packet* Retreive();
     void Release();
+
+    size_t ready_size() const { return ready.size(); }
 };
 
 class ENGINE_API IPureClient
@@ -51,6 +53,7 @@ public:
     // receive
     IC virtual NET_Packet* net_msg_Retreive() { return net_Queue.Retreive(); }
     IC void net_msg_Release() { net_Queue.Release(); }
+    IC size_t net_msg_ready_size() const { return net_Queue.ready_size(); }
 
     // send
     virtual void Send(NET_Packet& P, u32 dwFlags = DPNSEND_GUARANTEED, u32 dwTimeout = 0);

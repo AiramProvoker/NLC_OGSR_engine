@@ -35,6 +35,16 @@ public:
     CInventoryOwner();
     virtual ~CInventoryOwner();
 
+    CWeapon* m_ActiveWeapon{};
+    u32 m_dwWeaponUpdated{};
+
+    u16 m_silent_take{u16(-1)};
+    u16 m_silent_reject{u16(-1)};
+    bool m_transfer_flag{};
+
+    virtual void BeginTransfer();
+    virtual void EndTransfer();
+
 public:
     virtual CInventoryOwner* cast_inventory_owner() { return this; }
 
@@ -64,7 +74,7 @@ public:
     ////////////////////////////////////
     //торговля и общение с персонажем
 
-    virtual bool AllowItemToTrade(CInventoryItem const* item, EItemPlace place) const;
+    virtual bool AllowItemToTrade(CInventoryItem const* item, bool check_listed) const;
     virtual void OnFollowerCmd(int cmd){}; // redefine for CAI_Stalkker
     //инициализация объекта торговли
     CTrade* GetTrade();

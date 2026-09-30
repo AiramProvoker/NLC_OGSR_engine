@@ -35,9 +35,9 @@ void CRenderTarget::phase_combine(CBackend& cmd_list)
 
         // Compute params
         CEnvDescriptorMixer& envdesc = *g_pGamePersistent->Environment().CurrentEnv;
-        const float minamb = ps_pnv_mode == 1 ? 0.005f : 0.001f;
-        Fvector4 ambclr = {std::max(envdesc.ambient.x * 2, minamb), std::max(envdesc.ambient.y * 2, minamb), std::max(envdesc.ambient.z * 2, minamb), 0};
-        ambclr.mul(ps_r2_sun_lumscale_amb);
+        extern float min_lumscale_amb;
+        Fvector4 ambclr = {std::max(envdesc.ambient.x * 2 * ps_r2_sun_lumscale_amb, min_lumscale_amb), std::max(envdesc.ambient.y * 2 * ps_r2_sun_lumscale_amb, min_lumscale_amb),
+                           std::max(envdesc.ambient.z * 2 * ps_r2_sun_lumscale_amb, min_lumscale_amb), 0};
 
         Fvector4 envclr;
 

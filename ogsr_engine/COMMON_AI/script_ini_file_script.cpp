@@ -34,7 +34,7 @@ static void iterate_sections(CInifile* self, const luabind::functor<void>& funct
         functor(it.first.c_str());
 }
 
-static CInifile* reload_system_ini()
+CInifile* reload_system_ini()
 {
     CInifile::Destroy(pSettings);
 
@@ -143,6 +143,7 @@ void CScriptIniFile::script_register(lua_State* L)
                   .def("remove_section", &CInifile::remove_section)
                   .def("get_as_string", &CInifile::get_as_string)
                   .def("save", &CInifile::save_as)
+                  .def("release", &CInifile::release)
                   .def("name", &CInifile::fname)
                   .def("iterate_sections", &iterate_sections)
 

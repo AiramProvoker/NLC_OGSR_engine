@@ -2,6 +2,8 @@
 #include "torch.h"
 #include "entity.h"
 #include "actor.h"
+#include "game_object_space.h"
+#include "script_game_object.h"
 #include "../xr_3da/LightAnimLibrary.h"
 #include "PhysicsShell.h"
 #include "xrserver_objects_alife_items.h"
@@ -113,13 +115,16 @@ void CTorch::SwitchNightVision()
 
 void CTorch::SwitchNightVision(bool vision_on)
 {
+    auto* pA = smart_cast<CActor*>(H_Parent());
+    if (pA)
+        Actor()->callback(GameObject::eBeforeSwitchNVD)(vision_on);
+
     if (!m_bNightVisionEnabled)
     {
         m_bNightVisionOn = vision_on;
         return;
     }
 
-    auto* pA = smart_cast<CActor*>(H_Parent());
     if (!pA)
         return;
 
@@ -203,6 +208,13 @@ void CTorch::Switch()
 
 void CTorch::Switch(bool light_on)
 {
+    if (smart_cast<CActor*>(H_Parent()))
+    {
+        Actor()->callback(GameObject::eBeforeSwitchTorch)(light_on);
+        if (m_disable_switch)
+            return;
+    }
+
     if (auto pActor = smart_cast<CActor*>(H_Parent()); pActor && pActor->g_Alive())
     {
         if (light_on && !m_switched_on)

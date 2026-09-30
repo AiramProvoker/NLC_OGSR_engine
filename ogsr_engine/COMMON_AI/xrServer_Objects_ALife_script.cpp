@@ -10,6 +10,21 @@
 #include "xrServer_Objects_ALife.h"
 #include "xrServer_script_macroses.h"
 #include "xrServer_Objects_ALife_Monsters.h"
+#ifdef XRGAME_EXPORTS
+#include "level.h"
+#include "level_changer.h"
+
+static void set_silent_mode(CSE_ALifeLevelChanger* lc, u8 sm)
+{
+    lc->m_SilentMode = sm;
+    if (lc->ID == u16(-1))
+        return;
+    CObject* O = Level().Objects.net_Find(lc->ID);
+    if (O && !O->getDestroy())
+        if (auto changer = smart_cast<CLevelChanger*>(O))
+            changer->SetSilentMode(sm);
+}
+#endif
 
 using namespace luabind;
 
@@ -129,5 +144,9 @@ void CSE_ALifeLevelChanger::script_register(lua_State* L)
                   .def_readwrite("dest_level_vertex_id", &CSE_ALifeLevelChanger::m_dwNextNodeID)
                   .def_readwrite("dest_position", &CSE_ALifeLevelChanger::m_tNextPosition)
                   .def_readwrite("dest_direction", &CSE_ALifeLevelChanger::m_tAngles)
-                  .def_readwrite("silent_mode", &CSE_ALifeLevelChanger::m_SilentMode)];
+                  .def_readwrite("silent_mode", &CSE_ALifeLevelChanger::m_SilentMode)
+#ifdef XRGAME_EXPORTS
+                  .def("set_silent_mode", &set_silent_mode)
+#endif
+    ];
 }

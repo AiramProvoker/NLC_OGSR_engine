@@ -7,6 +7,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "fl_hook.h"
 #include "space_restriction.h"
 #include "restriction_space.h"
 #include "space_restriction_manager.h"
@@ -115,7 +116,7 @@ void CSpaceRestrictionManager::restrict(ALife::_OBJECT_ID id, shared_str out_res
     shared_str merged_out_restrictions = out_restrictors;
     shared_str merged_in_restrictions = in_restrictors;
     shared_str _default_out_restrictions = default_out_restrictions();
-    shared_str _default_in_restrictions = default_in_restrictions();
+    shared_str _default_in_restrictions = fl_hook::brz_default_in(id, default_in_restrictions());
 
     difference_restrictions(_default_out_restrictions, merged_in_restrictions);
     difference_restrictions(_default_in_restrictions, merged_out_restrictions);

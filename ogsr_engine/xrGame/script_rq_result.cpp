@@ -28,7 +28,7 @@ void script_rq_result::set_result(collide::rq_result _res)
             }
         }
     }
-    else
+    else if (element >= 0 && size_t(element) < Level().ObjectSpace.GetStaticModel()->get_tris_count())
     {
         CDB::TRI* T = Level().ObjectSpace.GetStaticTris() + element;
         if (T->material < GMLib.CountMaterial())

@@ -7,6 +7,7 @@
 ////////////////////////////////////////////////////////////////////////////
 
 #include "stdafx.h"
+#include "fl_hook.h"
 #include "script_game_object.h"
 #include "ai_space.h"
 #include "script_engine.h"
@@ -33,6 +34,7 @@
 #include "level_debug.h"
 #include "ai/monsters/BaseMonster/base_monster.h"
 #include "trade_parameters.h"
+#include "Artifact.h"
 #include "script_ini_file.h"
 #include "sound_player.h"
 #include "stalker_decision_space.h"
@@ -113,6 +115,9 @@ const CCoverPoint* CScriptGameObject::ambush_cover(const Fvector& position, cons
 
 const CCoverPoint* CScriptGameObject::ambush_cover(const Fvector& position, const Fvector& enemy_position, float radius, float min_distance, const luabind::functor<bool>& callback)
 {
+    if (radius < 0.f)
+        return fl_hook::ambush_cover_ex(this, position, enemy_position, radius, min_distance, callback);
+
     CAI_Stalker* stalker = smart_cast<CAI_Stalker*>(&object());
     ASSERT_FMT(stalker, "[%s]: %s not a CAI_Stalker", __FUNCTION__, object().cName().c_str());
     xr_vector<const CCoverPoint*> covers;
@@ -760,6 +765,46 @@ void CScriptGameObject::DisableAnomaly(bool keep_update)
     zone->ZoneDisable(keep_update);
 }
 
+void CScriptGameObject::SetSection(LPCSTR section)
+{
+    ISpatial* spatial = smart_cast<ISpatial*>(&object());
+    if (spatial)
+        g_SpatialSpace->remove(spatial);
+
+    if (auto owner = smart_cast<CInventoryOwner*>(object().H_Parent()))
+        owner->inventory().ReplaceInMap(&object(), section);
+
+    object().cNameSect_set(section);
+
+    if (CSE_Abstract* se = alife_object())
+    {
+        se->set_name(section);
+        string64 buff;
+        sprintf_s(buff, "%s%d", section, se->ID);
+        se->set_name_replace(buff);
+    }
+
+    if (auto art = object().cast_artefact())
+        art->Load(section);
+
+    if (spatial)
+        g_SpatialSpace->insert(spatial);
+}
+
+void CScriptGameObject::SetObjectName(LPCSTR name)
+{
+    object().cName_set(name);
+    if (CSE_Abstract* se = alife_object())
+        se->set_name_replace(name);
+}
+
+void CScriptGameObject::SetIgnoreAny(bool status)
+{
+    CCustomZone* zone = smart_cast<CCustomZone*>(&object());
+    THROW(zone);
+    zone->SetIgnoreAny(status);
+}
+
 float CScriptGameObject::GetAnomalyPower()
 {
     CCustomZone* zone = smart_cast<CCustomZone*>(&object());
@@ -1206,4 +1251,19 @@ const CCoverPoint* CScriptGameObject::angle_cover(const Fvector& position, float
             return p;
     }
     return nullptr;
+}
+
+void CScriptGameObject::setTradeVCost(float vcost, bool override)
+{
+    auto owner = smart_cast<CInventoryOwner*>(&object());
+    ASSERT_FMT(owner, "[%s]: %s not a CInventoryOwner", __FUNCTION__, object().cName().c_str());
+    owner->GetTrade()->m_vcost = vcost;
+    owner->GetTrade()->m_use_vcost = override;
+}
+
+void CScriptGameObject::ignoreTradeCondFactor(bool override)
+{
+    auto owner = smart_cast<CInventoryOwner*>(&object());
+    ASSERT_FMT(owner, "[%s]: %s not a CInventoryOwner", __FUNCTION__, object().cName().c_str());
+    owner->GetTrade()->m_ignore_cond_factor = override;
 }

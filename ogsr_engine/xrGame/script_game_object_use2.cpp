@@ -202,11 +202,19 @@ void CScriptGameObject::fake_death_stand_up()
     monster->fake_death_stand_up();
 }
 
-void CScriptGameObject::berserk()
+void CScriptGameObject::berserk(bool flag)
 {
     CBaseMonster* monster = smart_cast<CBaseMonster*>(&object());
     if (monster)
-        monster->set_berserk();
+        monster->script_berserk = flag;
+}
+
+bool CScriptGameObject::is_berserk()
+{
+    CBaseMonster* monster = smart_cast<CBaseMonster*>(&object());
+    if (monster)
+        return monster->script_berserk;
+    return false;
 }
 
 void CScriptGameObject::set_custom_panic_threshold(float value)

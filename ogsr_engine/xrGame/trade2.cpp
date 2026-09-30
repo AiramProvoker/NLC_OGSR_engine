@@ -137,10 +137,12 @@ u32 CTrade::GetItemPrice(PIItem pItem, bool b_buying)
 {
     // computing base_cost
     float base_cost = (float)pItem->Cost();
+    if (m_use_vcost)
+        base_cost = m_vcost;
 
     // computing condition factor
     // for "dead" weapon we use 10% from base cost, for "good" weapon we use full base cost
-    const float condition_factor = 0.1f + pItem->GetCondition() * 0.9f; // powf(pItem->GetCondition() * 0.9f + .1f, 0.75f);
+    const float condition_factor = m_ignore_cond_factor ? 1.f : 0.1f + pItem->GetCondition() * 0.9f; // powf(pItem->GetCondition() * 0.9f + .1f, 0.75f);
 
     // computing relation factor
     float relation_factor;
@@ -173,7 +175,10 @@ u32 CTrade::GetItemPrice(PIItem pItem, bool b_buying)
     else
     {
         if (!pThis.inv_owner->trade_parameters().enabled(CTradeParameters::action_sell(0), pItem->object().cNameSect()))
-            return 0;
+        {
+            Msg("CTrade::GetItemPrice return -1 for item [%s]", pItem->object().cNameSect().c_str());
+            return u32(-1);
+        }
         p_trade_factors = &pThis.inv_owner->trade_parameters().factors(CTradeParameters::action_sell(0), pItem->object().cNameSect());
     }
     const CTradeFactors& trade_factors = *p_trade_factors;

@@ -727,6 +727,31 @@ void CSE_ALifeItemDocument::UPDATE_Read(NET_Packet& tNetPacket) { inherited::UPD
 void CSE_ALifeItemDocument::UPDATE_Write(NET_Packet& tNetPacket) { inherited::UPDATE_Write(tNetPacket); }
 
 ////////////////////////////////////////////////////////////////////////////
+// CSE_ALifeItemEatable
+////////////////////////////////////////////////////////////////////////////
+CSE_ALifeItemEatable::CSE_ALifeItemEatable(LPCSTR caSection) : CSE_ALifeItem(caSection) { m_portions_num = pSettings->r_s32(caSection, "eat_portions_num"); }
+
+CSE_ALifeItemEatable::~CSE_ALifeItemEatable() {}
+
+void CSE_ALifeItemEatable::STATE_Read(NET_Packet& tNetPacket, u16 size) { inherited::STATE_Read(tNetPacket, size); }
+
+void CSE_ALifeItemEatable::STATE_Write(NET_Packet& tNetPacket) { inherited::STATE_Write(tNetPacket); }
+
+void CSE_ALifeItemEatable::UPDATE_Read(NET_Packet& tNetPacket)
+{
+    inherited::UPDATE_Read(tNetPacket);
+
+    if (m_wVersion > 118 || tNetPacket.r_elapsed() >= sizeof(u32))
+        tNetPacket.r_s32(m_portions_num);
+}
+
+void CSE_ALifeItemEatable::UPDATE_Write(NET_Packet& tNetPacket)
+{
+    inherited::UPDATE_Write(tNetPacket);
+    tNetPacket.w_s32(m_portions_num);
+}
+
+////////////////////////////////////////////////////////////////////////////
 // CSE_ALifeItemGrenade
 ////////////////////////////////////////////////////////////////////////////
 CSE_ALifeItemGrenade::CSE_ALifeItemGrenade(LPCSTR caSection) : CSE_ALifeItem(caSection)

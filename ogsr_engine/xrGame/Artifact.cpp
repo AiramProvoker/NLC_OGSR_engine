@@ -15,6 +15,8 @@
 #include "level_graph.h"
 #include "ai_space.h"
 #include "actor.h"
+#include "game_object_space.h"
+#include "script_game_object.h"
 #include "patrol_path_storage.h"
 
 #define FASTMODE_DISTANCE (50.f) // distance to camera from sphere, when zone switches to fast update sequence
@@ -427,6 +429,7 @@ void CArtefact::OnAnimationEnd(u32 state)
     case eActivating: {
         if (Local())
         {
+            Actor()->callback(GameObject::eOnArtAnimActivationEnd)(lua_game_object());
             SwitchState(eHiding);
             NET_Packet P;
             u_EventGen(P, GEG_PLAYER_ACTIVATEARTEFACT, H_Parent()->ID());

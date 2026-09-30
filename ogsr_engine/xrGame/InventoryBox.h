@@ -15,6 +15,7 @@ public:
     void AddAvailableItems(TIItemContainer& items_container) const;
     bool IsEmpty() const;
     u32 GetSize() const;
+    float GetItemsWeight() const;
     CScriptGameObject* GetObjectByName(LPCSTR);
     CScriptGameObject* GetObjectByIndex(u32);
 
