@@ -17,6 +17,9 @@
 # - XR_3DA's PostBuildStep1 copies dbghelp.dll from the Windows SDK Debuggers
 #   folder. Without the SDK debugging tools it fails after the exe is linked;
 #   that single error is tolerated here (the game ships its own dbghelp.dll).
+# - After a successful build, xrEngine.exe and its xrEngine.pdb are copied to
+#   nlc_tools\builds\<yyyyMMdd_HHmmss>_<sha256 prefix 8>\ (git-ignored; the
+#   timestamp is the exe's write time), so every exe keeps its matching PDB.
 
 param([switch]$Rebuild)
 
@@ -51,7 +54,23 @@ if ($code -ne 0 -and $dbghelp.Count -eq 0) { throw "MSBuild exit $code without a
 if (-not (Test-Path $exe)) { throw "xrEngine.exe was not produced. Log: $log" }
 
 $item = Get-Item $exe
+$hash = (Get-FileHash $exe -Algorithm SHA256).Hash
 Write-Host ("Built {0}  {1:N0} bytes  {2}" -f $item.FullName, $item.Length, $item.LastWriteTime)
-Write-Host ("SHA-256 {0}" -f (Get-FileHash $exe -Algorithm SHA256).Hash)
+Write-Host ("SHA-256 {0}" -f $hash)
 if (-not $linked) { Write-Host 'Note: xrEngine.exe was already up to date (not relinked).' }
+
+$pdb = [System.IO.Path]::ChangeExtension($exe, '.pdb')
+$builds = Join-Path $root 'nlc_tools\builds'
+$prefix = $hash.Substring(0, 8).ToLowerInvariant()
+$archived = @(Get-ChildItem -Path $builds -Directory -Filter "*_$prefix" -ErrorAction SilentlyContinue)
+if ($archived.Count -gt 0) {
+    Write-Host "Archive: already in $($archived[0].FullName)"
+} elseif (-not (Test-Path $pdb) -or (Get-Item $pdb).LastWriteTime -lt $item.LastWriteTime.AddMinutes(-5)) {
+    Write-Host 'Warning: no xrEngine.pdb from this link next to the exe; build not archived.'
+} else {
+    $dest = Join-Path $builds ($item.LastWriteTime.ToString('yyyyMMdd_HHmmss') + '_' + $prefix)
+    New-Item -ItemType Directory -Force -Path $dest | Out-Null
+    Copy-Item -LiteralPath $exe, $pdb -Destination $dest
+    Write-Host "Archive: $dest"
+}
 Write-Host "Log: $log"
