@@ -5,7 +5,31 @@ extern ECORE_API u32 r2_SmapCascade0Size, /*r2_SmapCascade1Size,*/ r2_SmapCascad
 
 extern ECORE_API u32 ps_r_pp_aa_mode;
 extern ECORE_API u32 ps_r_dlss_preset;
+extern ECORE_API u32 ps_r_dlss_quality;
+
+bool R_dlss_is_preset_available(u32 preset);
+void R_dlss_refresh_available_presets();
+extern char ps_r_dlss_dll_version[64];
+extern ECORE_API u32 ps_r_fsr3_quality;
 extern float ps_r_dlss_3dss_scale_factor;
+
+enum : u32
+{
+    DLSS_QUALITY_DLAA,
+    DLSS_QUALITY_QUALITY,
+    DLSS_QUALITY_BALANCED,
+    DLSS_QUALITY_PERFORMANCE,
+    DLSS_QUALITY_ULTRA_PERFORMANCE,
+};
+
+enum : u32
+{
+    FSR3_QUALITY_NATIVE_AA,
+    FSR3_QUALITY_QUALITY,
+    FSR3_QUALITY_BALANCED,
+    FSR3_QUALITY_PERFORMANCE,
+    FSR3_QUALITY_ULTRA_PERFORMANCE,
+};
 
 extern ECORE_API u32 ps_r_sun_shafts;
 extern ECORE_API u32 ps_r_sunshafts_mode;
@@ -141,15 +165,19 @@ extern BOOL ps_ssfx_pom_refine, ps_ssfx_terrain_pom_refine;
 extern ECORE_API Fvector4 ps_ssfx_pom, ps_ssfx_terrain_pom, ps_ssfx_terrain_offset;
 extern Fvector4 ps_ssfx_ssr_1, ps_ssfx_ssr_2;
 
-// textures
-extern ECORE_API int psTextureLOD;
-
 extern ECORE_API float ps_r__opt_dist;
 
 extern ECORE_API int opt_static_geom;
 extern ECORE_API int opt_shadow_geom;
 
 extern int r_back_buffer_count;
+
+enum
+{
+    old_style_flare,
+    new_shader_flare
+};
+extern u32 r_lens_flare_mode;
 
 enum : u64
 {
@@ -161,7 +189,7 @@ enum : u64
     R2FLAGEXT_ENABLE_TESSELLATION = 1ull << 5,
     R2FLAGEXT_WIREFRAME = 1ull << 6,
     R2FLAGEXT_HOM_DEPTH_DRAW = 1ull << 7,
-    // = 1ull << 8,
+    R2FLAG_SMAP_LIGHTS_2SIDE = 1ull << 8,
     R2FLAGEXT_DISABLE_DYNAMIC = 1ull << 9,
     R2FLAGEXT_DISABLE_PARTICLES = 1ull << 10,
     R2FLAGEXT_DISABLE_HOM = 1ull << 11,
@@ -180,7 +208,7 @@ enum : u64
 
     R2FLAG_STEEP_PARALLAX = 1ull << 22,
 
-    // = 1ull << 23,
+    R2FLAG_SMAP_2SIDE = 1ull << 23,
     R2FLAG_EXP_MT_BONES = 1ull << 24,
     R2FLAG_DETAIL_BUMP = 1ull << 25,
 
@@ -227,6 +255,8 @@ enum : u64
     R2FLAGEXT_SSFX_SHADOWS = 1ull << 57,
     R2FLAGEXT_SSFX_SSS = 1ull << 58,
     R2FLAGEXT_SMAP_LOW_LOD = 1ull << 59,
+    R2FLAGEXT_SHADER_CACHE = 1ull << 60,
+    R2FLAGEXT_DISABLE_PARTICLES_COLLISION = 1ull << 61,
 };
 
 extern void xrRender_initconsole();
@@ -236,7 +266,7 @@ enum
 {
     NO_AA,
     DLSS,
-    FSR2,
+    FSR3,
     TAA,
     SMAA,
 };

@@ -8,5 +8,5 @@ ECORE_API BOOL bDebug = FALSE;
 u32 psCurrentVidMode[2] = {1024, 768};
 
 // release version always has "mt_*" enabled
-Flags32 psDeviceFlags{rsDetails | /*rsDrawStatic | rsDrawDynamic |*/ rsExclusiveMode | rsAlwaysActive | rs_SSFX_HUD_RAINDROPS};
+Flags32 psDeviceFlags{rsDetails | rsAlwaysActive | rs_SSFX_HUD_RAINDROPS};
 int ps_wm_rotfix = 1;

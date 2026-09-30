@@ -81,13 +81,14 @@ void CBlender_deffer_flat::Compile(CBlender_Compile& C)
         C.r_End();
         break;
     case SE_R2_SHADOW: // smap-direct
+    case SE_R2_SHADOW_LIGHTS:
         uber_shadow(C, "base");
-        // C.r_Pass	("shadow_direct_base","dumb",	FALSE,TRUE,TRUE,FALSE);
-        // C.r_Sampler		("s_base",C.L_textures[0]);
         C.r_dx10Texture("s_base", C.L_textures[0]);
         C.r_dx10Sampler("smp_base");
         C.r_dx10Sampler("smp_linear");
         C.r_ColorWriteEnable(false, false, false, false);
+        if (ps_r2_ls_flags.test(C.iElement == SE_R2_SHADOW_LIGHTS ? R2FLAG_SMAP_LIGHTS_2SIDE : R2FLAG_SMAP_2SIDE))
+            C.r_CullMode(D3DCULL_NONE);
         C.r_End();
         break;
     }

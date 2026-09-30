@@ -410,9 +410,9 @@ void CLevel::OnFrame()
     // Inherited update
     inherited::OnFrame();
 
-    extern bool s_ScriptTime;
+    extern bool editor_override_time;
 
-    if (!s_ScriptTime)
+    if (!editor_override_time)
     {
         g_pGamePersistent->Environment().SetGameTime(GetEnvironmentGameDayTimeSec(), game->GetEnvironmentGameTimeFactor());
     }
@@ -439,7 +439,6 @@ void CLevel::OnFrame()
 
     CImGuiEditor& editor = CImGuiEditor::Get();
     editor.ShowEditor();
-    editor.Editor_OnFrame();
 }
 
 extern Flags32 dbg_net_Draw_Flags;
@@ -456,7 +455,7 @@ void CLevel::OnRender()
     Render->Calculate();
     Render->Render();
 
-    Game().OnRender();
+    ::Render->ui_is_rendering = true;
 
     //отрисовать трассы пуль
     // Device.Statistic->TEST1.Begin();
@@ -630,6 +629,8 @@ void CLevel::OnRender()
     }
 
 #endif
+
+    ::Render->ui_is_rendering = false;
 }
 
 void CLevel::OnEvent(EVENT E, u64 P1, u64 /**P2/**/)

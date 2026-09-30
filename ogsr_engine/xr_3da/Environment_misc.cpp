@@ -13,7 +13,7 @@
 #include "../xrGame/ShapeData.h"
 
 ENGINE_API float ps_r_sunshafts_intensity = 0.0f;
-ENGINE_API float puddles_drying = 2.f;
+ENGINE_API float puddles_drying = 0.2f;
 ENGINE_API float puddles_wetting = 4.f;
 ENGINE_API BOOL bLevelEnvModExport{};
 
@@ -107,7 +107,7 @@ bool CEnvModifier::saveIni(CInifile& ini, LPCSTR section)
     return true;
 }
 
-float CEnvModifier::sum(CEnvModifier& M, Fvector3& view)
+float CEnvModifier::sum(CEnvModifier& M, const Fvector3& view)
 {
     float _dist_sq{};
     switch (M.shape_type)
@@ -435,8 +435,21 @@ void CEnvDescriptor::load(CEnvironment& environment, CInifile& config)
     }
     else
     {
-        sun_dir.setHP(deg2rad(config.r_float(m_identifier.c_str(), "sun_altitude")), deg2rad(config.r_float(m_identifier.c_str(), "sun_longitude")));
-        R_ASSERT(_valid(sun_dir));
+        if (config.line_exist(m_identifier.c_str(), "sun_altitude") && config.line_exist(m_identifier.c_str(), "sun_longitude"))
+        {
+            sun_dir.setHP(deg2rad(config.r_float(m_identifier.c_str(), "sun_altitude")), deg2rad(config.r_float(m_identifier.c_str(), "sun_longitude")));
+            R_ASSERT(_valid(sun_dir));
+        }
+        else if (config.line_exist(m_identifier.c_str(), "sun_dir")) // для OpenXRay-стайл погодных секций
+        {
+            Fvector2 sund = config.r_fvector2(m_identifier.c_str(), "sun_dir");
+            sun_dir.setHP(deg2rad(sund.y), deg2rad(sund.x));
+            VERIFY(sun_dir.y < 0, "Invalid sun direction settings while loading");
+        }
+        else
+        {
+            FATAL("Invalid sun sun_altitude or sun_longitude settings in weather config:[%s] section:[%s]", config.fname(), m_identifier.c_str());
+        }
     }
 
     VERIFY(sun_dir.y < 0, "Invalid sun direction settings while loading");
@@ -580,20 +593,15 @@ void CEnvDescriptorMixer::lerp(CEnvironment* env, CEnvDescriptor& A, CEnvDescrip
 
     sky_rotation = (fi * A.sky_rotation + f * B.sky_rotation);
 
-    //.	far_plane				=	(fi*A.far_plane + f*B.far_plane + Mdf.far_plane)*psVisDistance*modif_power;
     if (Mdf.use_flags.test(eViewDist))
         far_plane = (fi * A.far_plane + f * B.far_plane + Mdf.far_plane) * psVisDistance * modif_power;
     else
         far_plane = (fi * A.far_plane + f * B.far_plane) * psVisDistance;
 
-    far_plane = std::max(far_plane, 250.f); //костыль для шейдера волюметрик лучей
-
-    //.	fog_color.lerp			(A.fog_color,B.fog_color,f).add(Mdf.fog_color).mul(modif_power);
     fog_color.lerp(A.fog_color, B.fog_color, f);
     if (Mdf.use_flags.test(eFogColor))
         fog_color.add(Mdf.fog_color).mul(modif_power);
 
-    //.	fog_density				=	(fi*A.fog_density + f*B.fog_density + Mdf.fog_density)*modif_power;
     fog_density = (fi * A.fog_density + f * B.fog_density);
     if (Mdf.use_flags.test(eFogDensity))
     {
@@ -699,10 +707,10 @@ void CEnvironment::mods_load()
     {
         CInifile ltXfile = CInifile(path);
 
-        for (const auto& it : ltXfile.sections())
+        for (const auto& key : ltXfile.sections_ordered() | std::views::keys)
         {
             CEnvModifier E;
-            if (E.loadIni(ltXfile, it.first.c_str()))
+            if (E.loadIni(ltXfile, key.c_str()))
                 Modifiers.push_back(E);
         }
     }
@@ -849,11 +857,11 @@ void CEnvironment::load_weathers()
             CInifile config(file_name);
 
             EnvVec& env = WeatherCycles[identifier];
-            auto& sections = config.sections();
+            auto& sections = config.sections_ordered();
             env.reserve(sections.size());
 
-            for (const auto& pair : sections)
-                env.push_back(create_descriptor(pair.second->Name, &config));
+            for (const auto* ini : sections | std::views::values)
+                env.push_back(create_descriptor(ini->Name, &config));
         }
 
         FS.file_list_close(file_list);
@@ -911,14 +919,15 @@ void CEnvironment::load_weather_effects()
             string_path file_name;
             FS.update_path(file_name, fsgame::game_weather_effects, file);
             CInifile config(file_name);
-            auto& sections = config.sections();
 
             EnvVec& env = WeatherFXs[identifier];
+            auto& sections = config.sections_ordered();
             env.reserve(sections.size() + 2);
+
             env.push_back(create_descriptor("00:00:00", nullptr));
 
-            for (const auto& pair : sections)
-                env.push_back(create_descriptor(pair.second->Name, &config));
+            for (const auto* ini : sections | std::views::values)
+                env.push_back(create_descriptor(ini->Name, &config));
 
             env.emplace_back(create_descriptor("24:00:00", nullptr))->exec_time_loaded = DAY_LENGTH;
         }

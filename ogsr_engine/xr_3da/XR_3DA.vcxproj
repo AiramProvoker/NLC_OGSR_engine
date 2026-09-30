@@ -83,7 +83,6 @@
       <WarningLevel>Level4</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <CompileAs>Default</CompileAs>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4456;4457;4458;4995;4577;4315;4267;4267;</DisableSpecificWarnings>
     </ClCompile>
@@ -110,8 +109,6 @@
       <Command>
         copy /Y "$(SolutionDir)\3rd_party\Src\OpenAL_Soft\bin\$(PlatformShortName)\soft_oal.dll" "$(OutDir)OpenAL32.dll"
         copy /Y "$(SolutionDir)\3rd_party\Src\NVIDIA_DLSS\DLSS\lib\Windows_x86_64\rel\nvngx_dlss.dll" "$(OutDir)nvngx_dlss.dll"
-        copy /Y "$(SolutionDir)\3rd_party\Src\AMD_FSR2\runtimes\win-x64\native\$(Configuration)\ffx_fsr2_api_dx11_x64.dll" "$(OutDir)ffx_fsr2_api_dx11_x64.dll"
-        copy /Y "$(SolutionDir)\3rd_party\Src\AMD_FSR2\runtimes\win-x64\native\$(Configuration)\ffx_fsr2_api_x64.dll" "$(OutDir)ffx_fsr2_api_x64.dll"
       </Command>
     </PostBuildEvent>
     <Manifest>
@@ -154,7 +151,6 @@
       <WarningLevel>Level4</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <CompileAs>Default</CompileAs>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4456;4457;4458;4995;4577;4315;4267;4267;</DisableSpecificWarnings>
       <BasicRuntimeChecks Condition="$(Configuration.Contains('Debug')) And '$(EnableASAN)'=='true'"></BasicRuntimeChecks>
@@ -185,8 +181,6 @@
       <Command>
         copy /Y "$(SolutionDir)\3rd_party\Src\OpenAL_Soft\bin\$(PlatformShortName)\soft_oal.dll" "$(OutDir)OpenAL32.dll"
         copy /Y "$(SolutionDir)\3rd_party\Src\NVIDIA_DLSS\DLSS\lib\Windows_x86_64\dev\nvngx_dlss.dll" "$(OutDir)nvngx_dlss.dll"
-        copy /Y "$(SolutionDir)\3rd_party\Src\AMD_FSR2\runtimes\win-x64\native\$(Configuration)\ffx_fsr2_api_dx11_x64.dll" "$(OutDir)ffx_fsr2_api_dx11_x64d.dll"
-        copy /Y "$(SolutionDir)\3rd_party\Src\AMD_FSR2\runtimes\win-x64\native\$(Configuration)\ffx_fsr2_api_x64.dll" "$(OutDir)ffx_fsr2_api_x64d.dll"
       </Command>
     </PostBuildEvent>
     <Manifest>

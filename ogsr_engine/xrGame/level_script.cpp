@@ -97,11 +97,11 @@ LPCSTR get_weather_prev() { return (*g_pGamePersistent->Environment().GetPrevWea
 
 u32 get_weather_last_shift() { return g_pGamePersistent->Environment().GetWeatherLastShift(); }
 
-extern bool s_ScriptWeather;
+extern bool editor_override_weather;
 
 void set_weather(LPCSTR weather_name, bool forced)
 {
-    if (s_ScriptWeather)
+    if (editor_override_weather)
         return;
 
     // KRodin: ТЧ погоду всегда надо обновлять форсировано, иначе она почему-то не всегда корректно обновляется. А для ЗП погоды так делать нельзя - будут очень резкие переходы!
@@ -113,7 +113,7 @@ void set_weather(LPCSTR weather_name, bool forced)
 
 void set_weather_next(LPCSTR weather_name)
 {
-    if (s_ScriptWeather)
+    if (editor_override_weather)
         return;
 
     g_pGamePersistent->Environment().SetWeatherNext(weather_name);
@@ -121,7 +121,7 @@ void set_weather_next(LPCSTR weather_name)
 
 bool set_weather_fx(LPCSTR weather_name)
 {
-    if (s_ScriptWeather)
+    if (editor_override_weather)
         return false;
 
     return g_pGamePersistent->Environment().SetWeatherFX(weather_name);
@@ -129,7 +129,7 @@ bool set_weather_fx(LPCSTR weather_name)
 
 bool start_weather_fx_from_time(LPCSTR weather_name, float time)
 {
-    if (s_ScriptWeather)
+    if (editor_override_weather)
         return false;
 
     return g_pGamePersistent->Environment().SetWeatherFXFromTime(weather_name, time);
@@ -151,6 +151,7 @@ float get_time_factor() { return (Level().GetGameTimeFactor()); }
 
 void set_game_difficulty(ESingleGameDifficulty dif)
 {
+    R_ASSERT(dif < egdCount);
     g_SingleGameDifficulty = dif;
     game_cl_Single* game = smart_cast<game_cl_Single*>(Level().game);
     VERIFY(game);
@@ -542,8 +543,7 @@ void iterate_sounds(LPCSTR prefix, u32 max_count, const CScriptCallbackEx<void>&
 {
     for (int j = 0, N = _GetItemCount(prefix); j < N; ++j)
     {
-        string_path fn, s;
-        LPSTR S = (LPSTR)&s;
+        string_path fn, S;
         _GetItem(prefix, j, S);
         if (FS.exist(fn, "$game_sounds$", S, ".ogg"))
             callback(prefix);

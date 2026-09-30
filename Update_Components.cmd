@@ -20,10 +20,10 @@ RD /s /q 3rd_party\Src\zstd\zstd
 git clone --branch dev --depth 1 https://github.com/facebook/zstd.git 3rd_party\Src\zstd\zstd
 
 RD /s /q 3rd_party\Src\mimalloc\mimalloc
-git clone --branch dev3 --depth 1 https://github.com/microsoft/mimalloc.git 3rd_party\Src\mimalloc\mimalloc
+git clone --branch v3.5.1 --depth 1 https://github.com/microsoft/mimalloc.git 3rd_party\Src\mimalloc\mimalloc
 
 RD /s /q 3rd_party\Src\NVIDIA_DLSS\DLSS
-git clone --branch v310.4.0 --depth 1 https://github.com/NVIDIA/DLSS.git 3rd_party\Src\NVIDIA_DLSS\DLSS
+git clone --branch v310.7.0 --depth 1 https://github.com/NVIDIA/DLSS.git 3rd_party\Src\NVIDIA_DLSS\DLSS
 
 RD /s /q 3rd_party\Src\cpputils\cpputils
 git clone --branch main --depth 1 https://github.com/tzcnt/cpputils.git 3rd_party\Src\cpputils\cpputils
@@ -31,5 +31,8 @@ git clone --branch main --depth 1 https://github.com/tzcnt/cpputils.git 3rd_part
 RD /s /q 3rd_party\Src\DiscordRPC\DiscordRPC
 git clone --branch master --depth 1 https://github.com/OGSR/discord-rpc.git 3rd_party\Src\DiscordRPC\DiscordRPC
 git clone --branch v1.1.0 --depth 1 https://github.com/Tencent/rapidjson.git 3rd_party\Src\DiscordRPC\DiscordRPC\thirdparty\rapidjson-1.1.0
+
+RD /s /q 3rd_party\Src\FidelityFX-SDK\FidelityFX-SDK
+git clone --branch release-FSR3-3.1.2-DX11-Native-API --depth 1 https://github.com/OGSR/FidelityFX-SDK.git 3rd_party\Src\FidelityFX-SDK\FidelityFX-SDK
 
 pause

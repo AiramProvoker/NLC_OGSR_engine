@@ -53,10 +53,11 @@ class CRender : public IRender_interface, public pureFrame
     friend class dxStatsRender;
 
 public:
-    enum
+    enum : u32
     {
-        PHASE_NORMAL = 0, // E[0]
-        PHASE_SMAP = 1, // E[1]
+        PHASE_NORMAL,
+        PHASE_SMAP,
+        PHASE_SMAP_LIGHTS,
     };
 
 public:
@@ -324,6 +325,7 @@ public:
 
     void AfterWorldRender() override; //Вызывается после рендера мира и перед UI ПДА
     void AfterUIRender() override; //После рендеринга UI. Вызывать только если нам нужно отрендерить кадр для пда.
+    void SetupDisplayBackbuffer() override;
 
     // Render mode
     virtual void rmNear(CBackend& cmd_list);

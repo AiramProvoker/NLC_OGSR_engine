@@ -337,6 +337,9 @@ void CWeaponKnife::DeviceUpdate()
 
 void CWeaponKnife::UpdateCL()
 {
+    if (H_Parent() && !ParentIsActor() && (strapped_mode() || IsHidden()))
+        return;
+
     inherited::UpdateCL();
 }
 

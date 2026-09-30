@@ -3,7 +3,8 @@ function element_0(shader, t_base, t_second, t_detail)		-- [0] generation of sun
 		:fog			(false)
 		:zb				(false, false)
 	shader:dx10texture	("s_position", "$user$position")
-	shader:dx10texture	("s_image", "$user$generic0")
+	shader:dx10texture	("s_image", "$user$postprocess0")
+	shader:dx10sampler("smp_nofilter")
 end
 
 function element_1(shader, t_base, t_second, t_detail)		-- [1] first pass
@@ -32,7 +33,7 @@ function element_4(shader, t_base, t_second, t_detail)		-- [4] combine pass
 		:fog			(false)
 		:zb				(false, false)
 	shader:dx10texture	("s_position", "$user$position")
-	shader:dx10texture	("s_image", "$user$generic0")
+	shader:dx10texture	("s_image", "$user$postprocess0")
 	shader:dx10texture	("s_sun_shafts", "$user$sun_shafts1")
 	-- Jitter
 	shader:dx10texture	("jitter0", "$user$jitter_0")
@@ -40,4 +41,6 @@ function element_4(shader, t_base, t_second, t_detail)		-- [4] combine pass
 	shader:dx10texture	("jitter_hq", "$user$jitter_hq")
 	
 	shader:dx10sampler	("smp_jitter")
+	shader:dx10sampler("smp_rtlinear")
+	shader:dx10sampler("smp_nofilter")
 end

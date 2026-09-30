@@ -113,6 +113,7 @@ void CBlender_BmmD::Compile(CBlender_Compile& C)
         C.r_dx10Texture("s_dn_b", strconcat(sizeof(mask), mask, oB_Name, "_bump"));
         C.r_dx10Texture("s_dn_a", strconcat(sizeof(mask), mask, oA_Name, "_bump"));
         C.r_dx10Texture("s_puddles_mask", strconcat(sizeof(mask), mask, C.L_textures[0].c_str(), "_puddles_mask"));
+        C.r_dx10Texture("s_puddles_perlin", "fx\\puddles_perlin");
         C.r_dx10Texture("s_puddles_normal", "fx\\water_normal");
         C.r_dx10Texture("s_rainsplash", "fx\\water_sbumpvolume");
 
@@ -134,11 +135,14 @@ void CBlender_BmmD::Compile(CBlender_Compile& C)
         C.r_End();
         break;
     case SE_R2_SHADOW: // smap
+    case SE_R2_SHADOW_LIGHTS:
         C.r_Pass("shadow_direct_terrain", "shadow_direct_base", FALSE, TRUE, TRUE, FALSE);
         C.r_dx10Texture("s_base", C.L_textures[0]);
         C.r_dx10Sampler("smp_base");
         C.r_dx10Sampler("smp_linear");
         C.r_ColorWriteEnable(false, false, false, false);
+        if (ps_r2_ls_flags.test(C.iElement == SE_R2_SHADOW_LIGHTS ? R2FLAG_SMAP_LIGHTS_2SIDE : R2FLAG_SMAP_2SIDE))
+            C.r_CullMode(D3DCULL_NONE);
         C.r_End();
         break;
     }
@@ -198,11 +202,14 @@ void CBlender_BmmD::CompileOLD(CBlender_Compile& C)
         C.r_End();
         break;
     case SE_R2_SHADOW: // smap
+    case SE_R2_SHADOW_LIGHTS:
         C.r_Pass("shadow_direct_base", "dumb", FALSE, TRUE, TRUE, FALSE);
         C.r_dx10Texture("s_base", C.L_textures[0]);
         C.r_dx10Sampler("smp_base");
         C.r_dx10Sampler("smp_linear");
         C.r_ColorWriteEnable(false, false, false, false);
+        if (ps_r2_ls_flags.test(C.iElement == SE_R2_SHADOW_LIGHTS ? R2FLAG_SMAP_LIGHTS_2SIDE : R2FLAG_SMAP_2SIDE))
+            C.r_CullMode(D3DCULL_NONE);
         C.r_End();
         break;
     }

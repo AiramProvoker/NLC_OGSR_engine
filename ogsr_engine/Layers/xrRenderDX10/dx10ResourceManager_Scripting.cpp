@@ -19,24 +19,6 @@ public:
     bool HudElement() const { return m_pC->HudElement; }
 };
 
-// wrapper
-class adopt_dx10sampler
-{
-    CBlender_Compile* m_pC;
-    u32 m_SI; //	Sampler index
-public:
-    adopt_dx10sampler(CBlender_Compile* C, u32 SamplerIndex) : m_pC(C), m_SI(SamplerIndex)
-    {
-        if (u32(-1) == m_SI)
-            m_pC = nullptr;
-    }
-    adopt_dx10sampler(const adopt_dx10sampler& _C) : m_pC(_C.m_pC), m_SI(_C.m_SI)
-    {
-        if (u32(-1) == m_SI)
-            m_pC = nullptr;
-    }
-};
-
 #pragma warning(push)
 #pragma warning(disable : 4512)
 // wrapper
@@ -117,7 +99,12 @@ public:
         C->PassSET_LightFog(FALSE, _fog);
         return *this;
     }
-    adopt_compiler& _zb(bool _test, bool _write, bool _invert = false)
+    adopt_compiler& _ZB(bool _test, bool _write)
+    {
+        C->PassSET_ZB(_test, _write);
+        return *this;
+    }
+    adopt_compiler& _ZBinvert(bool _test, bool _write, bool _invert)
     {
         C->PassSET_ZB(_test, _write, _invert);
         return *this;
@@ -137,10 +124,10 @@ public:
         C->r_dx10Texture(_resname, _texname);
         return *this;
     }
-    adopt_dx10sampler _dx10sampler(LPCSTR _name) const
+    u32 _dx10sampler(const char* _name) const
     {
         const u32 s = C->r_dx10Sampler(_name);
-        return adopt_dx10sampler(C, s);
+        return s;
     }
 
     //	DX10 specific
@@ -507,29 +494,6 @@ void CResourceManager::LS_Load()
                      .def("getLevel", [](adopt_dx10options*) { return g_pGameLevel->name().c_str(); })
                      .def("hudElement", [](adopt_dx10options* O) { return O->HudElement(); }),
 
-                 class_<adopt_dx10sampler>("_dx10sampler")
-                 //.def("texture",						&adopt_sampler::_texture		,return_reference_to(_1))
-                 //.def("project",						&adopt_sampler::_projective		,return_reference_to(_1))
-                 //.def("clamp",						&adopt_sampler::_clamp			,return_reference_to(_1))
-                 //.def("wrap",						    &adopt_sampler::_wrap			,return_reference_to(_1))
-                 //.def("mirror",						&adopt_sampler::_mirror			,return_reference_to(_1))
-                 //.def("f_anisotropic",				&adopt_sampler::_f_anisotropic	,return_reference_to(_1))
-                 //.def("f_trilinear",					&adopt_sampler::_f_trilinear	,return_reference_to(_1))
-                 //.def("f_bilinear",					&adopt_sampler::_f_bilinear		,return_reference_to(_1))
-                 //.def("f_linear",					    &adopt_sampler::_f_linear		,return_reference_to(_1))
-                 //.def("f_none",						&adopt_sampler::_f_none			,return_reference_to(_1))
-                 //.def("fmin_none",					&adopt_sampler::_fmin_none		,return_reference_to(_1))
-                 //.def("fmin_point",					&adopt_sampler::_fmin_point		,return_reference_to(_1))
-                 //.def("fmin_linear",					&adopt_sampler::_fmin_linear	,return_reference_to(_1))
-                 //.def("fmin_aniso",					&adopt_sampler::_fmin_aniso		,return_reference_to(_1))
-                 //.def("fmip_none",					&adopt_sampler::_fmip_none		,return_reference_to(_1))
-                 //.def("fmip_point",					&adopt_sampler::_fmip_point		,return_reference_to(_1))
-                 //.def("fmip_linear",					&adopt_sampler::_fmip_linear	,return_reference_to(_1))
-                 //.def("fmag_none",					&adopt_sampler::_fmag_none		,return_reference_to(_1))
-                 //.def("fmag_point",					&adopt_sampler::_fmag_point		,return_reference_to(_1))
-                 //.def("fmag_linear",					&adopt_sampler::_fmag_linear	,return_reference_to(_1))
-                 ,
-
                  class_<adopt_compiler>("_compiler")
                      //.def(constructor<const adopt_compiler&>())
                      .def("begin", &adopt_compiler::_passCS, return_reference_to<1>())
@@ -541,7 +505,8 @@ void CResourceManager::LS_Load()
                      .def("distort", &adopt_compiler::_o_distort, return_reference_to<1>())
                      .def("wmark", &adopt_compiler::_o_wmark, return_reference_to<1>())
                      .def("fog", &adopt_compiler::_fog, return_reference_to<1>())
-                     .def("zb", &adopt_compiler::_zb, return_reference_to<1>())
+                     .def("zb", &adopt_compiler::_ZB, return_reference_to<1>())
+                     .def("zb", &adopt_compiler::_ZBinvert, return_reference_to<1>())
                      .def("blend", &adopt_compiler::_blend, return_reference_to<1>())
                      .def("aref", &adopt_compiler::_aref, return_reference_to<1>())
                      .def("scopelense", &adopt_compiler::_o_scopelense, return_reference_to<1>())
@@ -560,7 +525,7 @@ void CResourceManager::LS_Load()
                      .def("dx10adress", &adopt_compiler::_dx10Adress, return_reference_to<1>())
                      .def("dx10bordercolor", &adopt_compiler::_dx10BorderColor, return_reference_to<1>())
 
-                     .def("dx10sampler", &adopt_compiler::_dx10sampler) // returns sampler-object
+                     .def("dx10sampler", &adopt_compiler::_dx10sampler)
                      .def("dx10Options", &adopt_compiler::_dx10Options), // returns options-object
 
                  class_<adopt_blend>("blend").enum_("blend")[(
@@ -672,7 +637,7 @@ Shader* CResourceManager::_lua_Create(LPCSTR d_shader, LPCSTR s_textures)
     C.BT = nullptr;
     C.bEditor = FALSE;
     C.bDetail = FALSE;
-    C.HudElement = RImplementation.hud_loading;
+    C.HudElement = RImplementation.shader_option_hud_loading();
 
     // Prepare
     _ParseList(C.L_textures, s_textures);
@@ -730,7 +695,9 @@ Shader* CResourceManager::_lua_Create(LPCSTR d_shader, LPCSTR s_textures)
                 S.E[1] = C._lua_Compile(s_shader, "normal");
             }
 
-            // Compile element
+            ASSERT_FMT(!object(s_shader, "l_point", LUA_TFUNCTION), "l_point found in blender [%s]. Check and remove it!", s_shader);
+            ASSERT_FMT(!object(s_shader, "l_spot", LUA_TFUNCTION), "l_spot found in blender [%s]. Check and remove it!", s_shader);
+            /*
             if (object(s_shader, "l_point", LUA_TFUNCTION))
             {
                 C.iElement = 2;
@@ -738,15 +705,14 @@ Shader* CResourceManager::_lua_Create(LPCSTR d_shader, LPCSTR s_textures)
                 S.E[2] = C._lua_Compile(s_shader, "l_point");
             }
 
-            // Compile element
             if (object(s_shader, "l_spot", LUA_TFUNCTION))
             {
                 C.iElement = 3;
                 C.bDetail = FALSE;
                 S.E[3] = C._lua_Compile(s_shader, "l_spot");
             }
+            */
 
-            // Compile element
             if (object(s_shader, "l_special", LUA_TFUNCTION))
             {
                 C.iElement = 4;

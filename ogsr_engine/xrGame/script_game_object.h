@@ -311,7 +311,9 @@ public:
     void EnableTalk();
     void DisableTalk();
     bool IsTalkEnabled();
+    CScriptGameObject* GetTalkPartner();
 
+    bool IsTrading();
     void EnableTrade();
     void DisableTrade();
     bool IsTradeEnabled();

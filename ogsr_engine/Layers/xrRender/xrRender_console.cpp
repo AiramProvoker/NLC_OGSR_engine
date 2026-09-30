@@ -18,12 +18,12 @@ constexpr xr_token CascadesSmapSizeToken[]{// {"512x512", 512},
 
 u32 r2_SmapLightsSize = 3072;
 constexpr xr_token LightsSmapSizeToken[]{//{"1536x1536", 1536},
-                                        //{"2048x2048", 2048},
+                                        {"2048x2048", 2048},
                                         {"2560x2560", 2560},
                                         {"3072x3072", 3072},
                                         {"4096x4096", 4096},
-                                        {"6144x6144", 6144},
-                                        {"8192x8192", 8192},
+                                        //{"6144x6144", 6144},
+                                        //{"8192x8192", 8192},
                                         {}};
 
 u32 r2_SmapRainSize = 1024;
@@ -37,19 +37,41 @@ u32 ps_r_pp_aa_mode = DLSS;
 constexpr xr_token pp_aa_mode_token[] = {
     {"st_opt_off", NO_AA},
     {"st_opt_dlss", DLSS},
-    {"st_opt_fsr2", FSR2},
+    {"st_opt_fsr3", FSR3},
     {"st_opt_taa", TAA},
     {"st_opt_smaa", SMAA},
 
     {nullptr, 0},
 };
 
-u32 ps_r_dlss_preset = NVSDK_NGX_DLSS_Hint_Render_Preset_F;
+u32 ps_r_dlss_preset = NVSDK_NGX_DLSS_Hint_Render_Preset_Default;
 constexpr xr_token dlss_mode_token[]{
     {"st_opt_dlss_default", NVSDK_NGX_DLSS_Hint_Render_Preset_Default}, // default behavior, may or may not change after OTA
-    {"st_opt_dlss_f", NVSDK_NGX_DLSS_Hint_Render_Preset_F},
-    {"st_opt_dlss_j", NVSDK_NGX_DLSS_Hint_Render_Preset_J},
-    {"st_opt_dlss_k", NVSDK_NGX_DLSS_Hint_Render_Preset_K},
+    {"st_opt_dlss_f", NVSDK_NGX_DLSS_Hint_Render_Preset_F}, // CNN
+    {"st_opt_dlss_j", NVSDK_NGX_DLSS_Hint_Render_Preset_J}, // Transformer
+    {"st_opt_dlss_k", NVSDK_NGX_DLSS_Hint_Render_Preset_K}, // Transformer
+    {"st_opt_dlss_l", NVSDK_NGX_DLSS_Hint_Render_Preset_L}, // Transformer
+    {"st_opt_dlss_m", NVSDK_NGX_DLSS_Hint_Render_Preset_M}, // Transformer
+    {},
+};
+
+u32 ps_r_dlss_quality = DLSS_QUALITY_DLAA;
+constexpr xr_token dlss_quality_token[]{
+    {"st_opt_dlaa", DLSS_QUALITY_DLAA},
+    {"st_opt_dlss_quality", DLSS_QUALITY_QUALITY},
+    {"st_opt_dlss_balanced", DLSS_QUALITY_BALANCED},
+    {"st_opt_dlss_performance", DLSS_QUALITY_PERFORMANCE},
+    {"st_opt_dlss_ultra_performance", DLSS_QUALITY_ULTRA_PERFORMANCE},
+    {},
+};
+
+u32 ps_r_fsr3_quality = FSR3_QUALITY_NATIVE_AA;
+constexpr xr_token fsr3_quality_token[]{
+    {"st_opt_fsr3_native_aa", FSR3_QUALITY_NATIVE_AA},
+    {"st_opt_fsr3_quality", FSR3_QUALITY_QUALITY},
+    {"st_opt_fsr3_balanced", FSR3_QUALITY_BALANCED},
+    {"st_opt_fsr3_performance", FSR3_QUALITY_PERFORMANCE},
+    {"st_opt_fsr3_ultra_performance", FSR3_QUALITY_ULTRA_PERFORMANCE},
     {},
 };
 
@@ -107,7 +129,7 @@ extern float r__dtex_range;
 
 Fvector3 ps_r_taa_jitter{};
 Fvector2 ps_r_taa_jitter_full{};
-float ps_r_cas{};
+float ps_r_cas{0.5};
 
 int ps_r__LightSleepFrames = 100;
 
@@ -167,14 +189,18 @@ Flags64 ps_r2_ls_flags = {
 //    R2FLAGEXT_RAIN_DROPS_CONTROL | 
 //    R2FLAGEXT_MASK | 
 //    R2FLAGEXT_MASK_CONTROL | 
-//    R2FLAGEXT_MT_TEXLOAD  |
+    R2FLAGEXT_MT_TEXLOAD  |
     R2FLAGEXT_SSLR |
+    R2FLAGEXT_SHADER_CACHE |
     R2FLAGEXT_SSFX_INTER_GRASS |
     R2FLAGEXT_FONT_SHADOWS
 //    | R2FLAGEXT_SSFX_SHADOWS
 //    | R2FLAGEXT_SSFX_SSS
-    | R2FLAGEXT_SMAP_LOW_LOD
+//    | R2FLAGEXT_SMAP_LOW_LOD
     | R2FLAGEXT_DISABLE_SMAPVIS
+    | R2FLAG_SMAP_2SIDE
+    | R2FLAGEXT_USE_ACES
+    | R2FLAGEXT_LENS_FLARE
 };
 
 BOOL ps_no_scale_on_fade = 0; // Alundaio
@@ -252,12 +278,12 @@ Fvector4 ps_ssfx_hud_drops_1{}, ps_ssfx_hud_drops_2{}; // Значениями �
 
 Fvector4 ps_ssfx_blood_decals{0.6f, 0.6f, 0.f, 0.f};
 
-Fvector4 ps_ssfx_rain_1{10.0f, 0.02f, 5.f, 2.f}; // Len, Width, Speed, Quality
-Fvector4 ps_ssfx_rain_2{0.4f, 0.5f, 5.0f, 1.0f}; // Alpha, Brigthness, Refraction, Reflection
-Fvector4 ps_ssfx_rain_3{0.95f, 0.5f, 0.0f, 0.0f}; // Alpha, Refraction ( Splashes )
+Fvector4 ps_ssfx_rain_1{6.0f, 0.025f, 0.6f, 2.f}; // Len, Width, Speed, Quality
+Fvector4 ps_ssfx_rain_2{0.7f, 0.1f, 1.0f, 0.5f}; // Alpha, Brigthness, Refraction, Reflection
+Fvector4 ps_ssfx_rain_3{0.15f, 1.f, 0.0f, 0.0f}; // Alpha, Refraction ( Splashes )
 
 Fvector3 ps_ssfx_shadow_cascades{25.f, 60.f, 160.f};
-Fvector4 ps_ssfx_grass_shadows = {0.0f, 0.0f, 0.0f, 0.0f}; // X - каскады на которых будут рендериться тени (0 - на первом, 1 - на первом и втором, 2 - на всех трёх), Y - устарело и более не используется, Z - дальность на которой будут рендериться тени от источников света (НЕ СОЛНЦА)
+Fvector4 ps_ssfx_grass_shadows = {0.0f, 0.0f, 50.0f, 0.0f}; // X - каскады на которых будут рендериться тени (0 - на первом, 1 - на первом и втором, 2 - на всех трёх), Y - устарело и более не используется, Z - дальность на которой будут рендериться тени от источников света (НЕ СОЛНЦА)
 Fvector4 ps_ssfx_grass_interactive{1.f, static_cast<float>(GRASS_SHADER_DATA_COUNT), 2000.f, 1.0f};
 Fvector4 ps_ssfx_int_grass_params_1{2.0f, 1.0f, 1.0f, 25.f};
 Fvector4 ps_ssfx_int_grass_params_2{1.0f, 5.0f, 1.0f, 1.0f};
@@ -314,9 +340,6 @@ float ps_pnv_params_2_2 = 0;
 float ps_pnv_params_3_2 = 0;
 float ps_pnv_params_4_2 = 1;
 
-// textures
-int psTextureLOD = 0;
-
 float ps_r2_img_exposure = 1.0f; // r2-only
 float ps_r2_img_gamma = 1.0f; // r2-only
 float ps_r2_img_saturation = 1.0f; // r2-only
@@ -328,7 +351,7 @@ float ps_r__opt_dist = 750.f;
 #include "../../xr_3da/xr_ioconsole.h"
 #include "../../xr_3da/xr_ioc_cmd.h"
 
-float ps_particle_update_coeff = 0.3f;
+float ps_particle_update_coeff{0.3f}, ps_particle_collision_min_dist{EPS_L};
 
 // Geometry optimization from Anomaly
 int opt_static_geom = 0;
@@ -337,6 +360,9 @@ int opt_shadow_geom = 0;
 int r_back_buffer_count{2};
 
 extern int delay_invisible_min, delay_invisible_max;
+
+constexpr xr_token r_lens_flare_mode_token[]{{"old_style_flare", old_style_flare}, {"new_shader_flare", new_shader_flare}, {}};
+u32 r_lens_flare_mode{new_shader_flare};
 
 //-----------------------------------------------------------------------
 class CCC_detail_radius : public CCC_Integer
@@ -383,6 +409,55 @@ class CCC_ModelPoolStat : public IConsole_Command
 public:
     CCC_ModelPoolStat(LPCSTR N) : IConsole_Command(N) { bEmptyArgsHandled = TRUE; };
     virtual void Execute(LPCSTR args) { RImplementation.Models->dump(); }
+};
+
+class CCC_DlssDllVersion : public IConsole_Command
+{
+public:
+    CCC_DlssDllVersion(LPCSTR N) : IConsole_Command(N)
+    {
+        bEmptyArgsHandled = TRUE;
+        bCanSave = FALSE;
+    }
+
+    void Execute(LPCSTR) override {}
+
+    void Status(TStatus& S) override { xr_strcpy(S, ps_r_dlss_dll_version); }
+};
+
+class CCC_DlssQuality : public CCC_Token
+{
+public:
+    CCC_DlssQuality(LPCSTR N, u32* V, const xr_token* T) : CCC_Token(N, V, T) {}
+
+    void Execute(LPCSTR args) override
+    {
+        CCC_Token::Execute(args);
+        R_dlss_refresh_available_presets();
+    }
+};
+
+class CCC_DlssRenderPreset : public CCC_Token
+{
+public:
+    CCC_DlssRenderPreset(LPCSTR N, u32* V, const xr_token* T) : CCC_Token(N, V, T) {}
+
+    bool TokenEnabled(int id) override
+    {
+        R_dlss_refresh_available_presets();
+        return R_dlss_is_preset_available(static_cast<u32>(id));
+    }
+
+    void Execute(LPCSTR args) override
+    {
+        CCC_Token::Execute(args);
+        R_dlss_refresh_available_presets();
+        if (!R_dlss_is_preset_available(*value))
+        {
+            Msg("! DLSS preset is not available, falling back to Default");
+            *value = NVSDK_NGX_DLSS_Hint_Render_Preset_Default;
+        }
+    }
 };
 
 class CCC_Preset : public CCC_Token
@@ -465,7 +540,7 @@ class CCC_SunshaftsIntensity : public CCC_Float
 public:
     CCC_SunshaftsIntensity(LPCSTR N, float* V, float _min, float _max) : CCC_Float(N, V, _min, _max)
     {
-        SetCanSave(FALSE);
+        SetCanSave(false);
     }
 };
 
@@ -553,8 +628,8 @@ public:
 
         const float dist = 10;
 
-        const Fvector pos = Device.vCameraPosition;
-        const Fvector dir = Device.vCameraDirection;
+        const Fvector& pos = Device.vCameraPosition;
+        const Fvector& dir = Device.vCameraDirection;
 
         xr_vector<std::pair<dxRender_Visual*, float>> list;
 
@@ -654,7 +729,7 @@ void xrRender_initconsole()
 
     CMD4(CCC_Float, "r__wallmark_ttl", &ps_r__WallmarkTTL, 1.0f, 10.f * 60.f);
 
-    CMD4(CCC_Float, "r__geometry_lod", &ps_r__LOD, 0.5f, 2.f);
+    CMD4(CCC_Float, "r__geometry_lod", &ps_r__LOD, 0.5f, 3.f);
     CMD4(CCC_Float, "r__lod_k", &ps_r__LOD_k, 0.1f, 10.f);
 
     CMD4(CCC_detail_radius, "r__detail_radius", &ps_r__detail_radius, 70, 300);
@@ -696,6 +771,7 @@ void xrRender_initconsole()
 
     CMD3(CCC_Mask64, "r2_disable_hom", &ps_r2_ls_flags_ext, R2FLAGEXT_DISABLE_HOM);
     CMD3(CCC_Mask64, "r2_disable_particles", &ps_r2_ls_flags_ext, R2FLAGEXT_DISABLE_PARTICLES);
+    CMD3(CCC_Mask64, "r2_disable_particles_collision", &ps_r2_ls_flags_ext, R2FLAGEXT_DISABLE_PARTICLES_COLLISION);
     CMD3(CCC_Mask64, "r2_disable_dynamic", &ps_r2_ls_flags_ext, R2FLAGEXT_DISABLE_DYNAMIC);
     CMD3(CCC_Mask64, "r2_disable_light", &ps_r2_ls_flags_ext, R2FLAGEXT_DISABLE_LIGHT);
     //CMD3(CCC_Mask64, "r2_disable_smapvis", &ps_r2_ls_flags_ext, R2FLAGEXT_DISABLE_SMAPVIS);
@@ -720,6 +796,7 @@ void xrRender_initconsole()
     CMD3(CCC_Mask64, "r2_mask_control", &ps_r2_ls_flags_ext, R2FLAGEXT_MASK_CONTROL);
 
     CMD3(CCC_Mask64, "r_sslr_enable", &ps_r2_ls_flags_ext, R2FLAGEXT_SSLR);
+    CMD3(CCC_Mask64, "r_shader_cache", &ps_r2_ls_flags_ext, R2FLAGEXT_SHADER_CACHE)
 
     CMD3(CCC_Mask64, "r_terrain_parallax_enable", &ps_r2_ls_flags_ext, R2FLAGEXT_TERRAIN_PARALLAX);
 
@@ -740,6 +817,9 @@ void xrRender_initconsole()
     CMD3(CCC_Token, "r__smap_cascade2_size", &r2_SmapCascade2Size, CascadesSmapSizeToken);
     CMD3(CCC_Token, "r__smap_lights_size", &r2_SmapLightsSize, LightsSmapSizeToken);
     CMD3(CCC_Token, "r__smap_rain_size", &r2_SmapRainSize, RainSmapSizeToken);
+
+    CMD3(CCC_Mask64, "r_smap_2side", &ps_r2_ls_flags, R2FLAG_SMAP_2SIDE);
+    CMD3(CCC_Mask64, "r_smap_lights_2side", &ps_r2_ls_flags, R2FLAG_SMAP_LIGHTS_2SIDE);
 
     CMD4(CCC_Float, "r2_sun_depth_far_scale", &ps_r2_sun_depth_far_scale, 0.5, 1.5);
     CMD4(CCC_Float, "r2_sun_depth_near_scale", &ps_r2_sun_depth_near_scale, 0.5, 1.5);
@@ -810,7 +890,10 @@ void xrRender_initconsole()
     CMD4(CCC_Float, "r2_visor_refl_radius", &ps_r2_visor_refl_radius, 0.3f, 0.6f);
 
     CMD3(CCC_Token, "r_aa_mode", &ps_r_pp_aa_mode, pp_aa_mode_token);
-    //CMD3(CCC_Token, "r_aa_dlss_preset", &ps_r_dlss_preset, dlss_mode_token);
+    CMD3(CCC_DlssQuality, "r_aa_dlss_quality", &ps_r_dlss_quality, dlss_quality_token);
+    CMD3(CCC_Token, "r_aa_fsr3_quality", &ps_r_fsr3_quality, fsr3_quality_token);
+    CMD3(CCC_DlssRenderPreset, "r_aa_dlss_preset", &ps_r_dlss_preset, dlss_mode_token);
+    CMD1(CCC_DlssDllVersion, "r_aa_dlss_version");
 
     CMD4(CCC_Float, "r_3dss_scale_factor", &ps_r_dlss_3dss_scale_factor, 1.f, 2.5f);
 
@@ -871,7 +954,7 @@ void xrRender_initconsole()
 */
 
     // Screen Space Shaders
-    CMD4(CCC_Vector3, "ssfx_shadows", &ps_ssfx_shadows, Fvector3().set(128, 1536, 0), Fvector3().set(1536, 4096, 0));
+    CMD4(CCC_Vector3, "ssfx_shadows", &ps_ssfx_shadows, (Fvector3{128.f, 1024.f, 0.f}), (Fvector3{1536.f, 3072.f, 0.f}));
 
     CMD4(CCC_Vector3, "ssfx_shadow_bias", &ps_ssfx_shadow_bias, Fvector3().set(0, 0, 0), Fvector3().set(1.0, 1.0, 1.0));
     CMD4(CCC_Vector4, "ssfx_lut", &ps_ssfx_lut, Fvector4().set(0.0, 0.0, 0.0, 0.0), tw2_max);
@@ -941,17 +1024,16 @@ void xrRender_initconsole()
     CMD4(CCC_Float, "ssfx_gamma", &ps_r2_img_gamma, 0.5f, 1.5f);
     CMD4(CCC_Float, "ssfx_saturation", &ps_r2_img_saturation, 0.5f, 1.5f);
 
-#pragma todo("Simp: В общем эта настройка работает, но надо убирать мипмапы у текстур ui. Да и заметного влияния на fps я не вижу.")
-    //CMD4(CCC_Integer, "texture_lod", &psTextureLOD, 0, 2);
-
     CMD1(CCC_PART_Export, "particles_export");
     CMD1(CCC_PART_Import, "particles_import");
 
     CMD1(CCC_PART_DumpTextures, "particles_dump_textures");
 
     CMD4(CCC_Float, "particle_update_mod", &ps_particle_update_coeff, 0.04f, 10.f);
+    CMD4(CCC_Float, "particle_collision_min_dist", &ps_particle_collision_min_dist, EPS, 1.0f);
 
     CMD3(CCC_Mask64, "r_lens_flare", &ps_r2_ls_flags_ext, R2FLAGEXT_LENS_FLARE);
+    CMD3(CCC_Token, "r_lens_flare_mode", &r_lens_flare_mode, r_lens_flare_mode_token);
 
     CMD1(CCC_Dbg_DumpStaticVisual, "dbg_dump_static_at_look");
 

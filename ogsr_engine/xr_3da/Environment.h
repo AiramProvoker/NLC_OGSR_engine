@@ -45,7 +45,7 @@ public:
     bool loadIni(CInifile& ini, LPCSTR section);
     bool saveIni(CInifile& ini, LPCSTR section);
 
-    float sum(CEnvModifier& _another, Fvector3& view);
+    float sum(CEnvModifier& _another, const Fvector3& view);
 };
 
 class ENGINE_API CEnvAmbient
@@ -266,7 +266,7 @@ private:
 
     bool b_wfx;
 
-    CEnvDescriptor* wfx_end_desc[2];
+    CEnvDescriptor* wfx_end_desc[2]{};
 
     shared_str CurrentName;
 
@@ -337,18 +337,18 @@ public:
 
     void RenderSky(CBackend& cmd_list);
     void RenderClouds(CBackend& cmd_list);
-    void RenderFlares(CBackend& cmd_list);
+    void RenderFlares(CBackend& cmd_list, BOOL bSun, BOOL bFlares, BOOL bGradient);
     void RenderLast(CBackend& cmd_list);
 
-    bool SetWeatherFX(shared_str name);
-    bool SetWeatherFXFromTime(shared_str name, float time);
+    bool SetWeatherFX(const shared_str& name);
+    bool SetWeatherFXFromTime(const shared_str& name, const float time);
     bool IsWeatherFXPlaying() const { return b_wfx; }
     void StopWeatherFX();
 
-    void SetWeather(shared_str name, bool forced = false);
-    shared_str& GetWeather() { return CurrentWeatherName; }
-    shared_str& GetPrevWeather() { return PrevWeatherName; }
-    void SetWeatherNext(shared_str name);
+    void SetWeather(const shared_str& name, const bool forced = false);
+    const shared_str& GetWeather() const { return CurrentWeatherName; }
+    const shared_str& GetPrevWeather() const { return PrevWeatherName; }
+    void SetWeatherNext(const shared_str& name);
     void ChangeGameTime(float game_time);
     void SetGameTime(float game_time, float time_factor);
 

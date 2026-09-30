@@ -145,12 +145,12 @@ public:
 
 public:
     // options
-    bool hud_loading{};
-    s32 m_skinning;
     u32 m_SMAPSize;
 
     // data
     CFrustum ViewBase;
+
+    bool ui_is_rendering{};
 
 public:
   
@@ -163,7 +163,12 @@ public:
     virtual void level_Load(IReader*) = 0;
     virtual void level_Unload() = 0;
 
-    void shader_option_skinning(s32 mode) { m_skinning = mode; }
+    void shader_option_skinning(s32 mode);
+    s32 shader_option_skinning();
+
+    void shader_option_hud_loading(bool t);
+    bool shader_option_hud_loading();
+
     virtual HRESULT shader_compile(LPCSTR name, DWORD const* pSrcData, UINT SrcDataLen, LPCSTR pFunctionName, LPCSTR pTarget, DWORD Flags, void*& result) = 0;
 
     // Information
@@ -223,6 +228,7 @@ public:
     virtual void Render() = 0;
     virtual void AfterWorldRender() = 0; //После рендеринга мира (перед UI ПДА)
     virtual void AfterUIRender() = 0; //После рендеринга UI. Вызывать только если нам нужно отрендерить кадр для пда.
+    virtual void SetupDisplayBackbuffer() = 0;
 
     virtual void Screenshot(ScreenshotMode mode = SM_NORMAL, LPCSTR name = nullptr) = 0;
 

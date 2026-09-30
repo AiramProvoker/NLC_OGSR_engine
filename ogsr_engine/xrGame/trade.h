@@ -46,7 +46,6 @@ public:
     SInventoryOwner pThis;
     SInventoryOwner pPartner;
 
-public:
     CTrade(CInventoryOwner* p_io);
     ~CTrade();
 
@@ -55,7 +54,7 @@ public:
     void StartTrade(CInventoryOwner* pInvOwner);
     void StartTrade();
     void StopTrade();
-    bool IsInTradeState() { return TradeState; }
+    bool IsInTradeState() const { return TradeState; }
 
     void OnPerformTrade(u32 money_get, u32 money_put);
 
@@ -65,7 +64,7 @@ public:
     CTrade* GetPartnerTrade();
     CInventory* GetPartnerInventory();
 
-    u32 GetItemPrice(CInventoryItem* pItem, bool b_buying);
+    u32 GetItemPrice(CInventoryItem* pItem, bool b_buying) const;
 
     void UpdateTrade();
 

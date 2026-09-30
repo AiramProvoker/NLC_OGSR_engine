@@ -2,6 +2,7 @@
 #include "UIOptionsItem.h"
 #include "UIOptionsManager.h"
 #include "..\..\xr_3da\xr_ioconsole.h"
+#include "..\..\xr_3da\xr_ioc_cmd.h"
 
 CUIOptionsManager CUIOptionsItem::m_optionsManager;
 
@@ -71,6 +72,12 @@ const xr_token* CUIOptionsItem::GetOptToken()
     return token;
 }
 
+bool CUIOptionsItem::IsOptTokenEnabled(int id)
+{
+    CCC_Token* cf = smart_cast<CCC_Token*>(Console->GetCommand(m_entry.c_str()));
+    return !cf || cf->TokenEnabled(id);
+}
+
 void CUIOptionsItem::SaveOptTokenValue(const char* val) { SaveOptStringValue(val); }
 
 #pragma todo("KRodin: желательно убрать этот хардкод, как в ЗП, конечно, но пока меня устраивает. Перетаскивать полностью движковые классы опций оттуда я точно не буду.")
@@ -86,4 +93,11 @@ void CUIOptionsItem::SaveValue()
 
     if (m_entry == "snd_efx" || m_entry == "snd_device")
         m_optionsManager.DoSndRestart();
+
+    if (m_dep == sdVidRestart)
+        m_optionsManager.DoVidRestart();
+    else if (m_dep == sdSndRestart)
+        m_optionsManager.DoSndRestart();
+    else if (m_dep == sdSystemRestart)
+        m_optionsManager.DoSystemRestart();
 }

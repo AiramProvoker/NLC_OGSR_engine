@@ -907,6 +907,9 @@ float CWeapon::dof_zoom_effect{}, CWeapon::dof_reload_effect{};
 
 void CWeapon::UpdateCL()
 {
+    if (H_Parent() && !ParentIsActor() && (strapped_mode() || IsHidden()))
+        return;
+
     inherited::UpdateCL();
 
     UpdateHUDAddonsVisibility();
@@ -1543,9 +1546,37 @@ void CWeapon::UpdateAddonsVisibility()
     {
         bone_id = pWeaponVisual->LL_BoneID(sbone);
 
-        if (ScopeAttachable())
+        if (bone_id != BI_NONE)
         {
-            if (IsScopeAttached())
+            if (ScopeAttachable())
+            {
+                if (IsScopeAttached())
+                {
+                    if (!pWeaponVisual->LL_GetBoneVisible(bone_id))
+                        pWeaponVisual->LL_SetBoneVisible(bone_id, TRUE, TRUE);
+                }
+                else
+                {
+                    if (pWeaponVisual->LL_GetBoneVisible(bone_id))
+                        pWeaponVisual->LL_SetBoneVisible(bone_id, FALSE, TRUE);
+                }
+            }
+
+            if (m_eScopeStatus == CSE_ALifeItemWeapon::eAddonDisabled && bone_id != BI_NONE && pWeaponVisual->LL_GetBoneVisible(bone_id))
+                pWeaponVisual->LL_SetBoneVisible(bone_id, FALSE, TRUE);
+            else if (m_eScopeStatus == CSE_ALifeItemWeapon::eAddonPermanent && bone_id != BI_NONE && !pWeaponVisual->LL_GetBoneVisible(bone_id))
+                pWeaponVisual->LL_SetBoneVisible(bone_id, TRUE, TRUE);
+        }
+    }
+    ///////////////////////////////////////////////////////////////////
+
+    bone_id = pWeaponVisual->LL_BoneID(m_sWpn_silencer_bone);
+
+    if (bone_id != BI_NONE)
+    {
+        if (SilencerAttachable())
+        {
+            if (IsSilencerAttached())
             {
                 if (!pWeaponVisual->LL_GetBoneVisible(bone_id))
                     pWeaponVisual->LL_SetBoneVisible(bone_id, TRUE, TRUE);
@@ -1555,28 +1586,6 @@ void CWeapon::UpdateAddonsVisibility()
                 if (pWeaponVisual->LL_GetBoneVisible(bone_id))
                     pWeaponVisual->LL_SetBoneVisible(bone_id, FALSE, TRUE);
             }
-        }
-
-        if (m_eScopeStatus == CSE_ALifeItemWeapon::eAddonDisabled && bone_id != BI_NONE && pWeaponVisual->LL_GetBoneVisible(bone_id))
-            pWeaponVisual->LL_SetBoneVisible(bone_id, FALSE, TRUE);
-        else if (m_eScopeStatus == CSE_ALifeItemWeapon::eAddonPermanent && bone_id != BI_NONE && !pWeaponVisual->LL_GetBoneVisible(bone_id))
-            pWeaponVisual->LL_SetBoneVisible(bone_id, TRUE, TRUE);
-    }
-    ///////////////////////////////////////////////////////////////////
-
-    bone_id = pWeaponVisual->LL_BoneID(m_sWpn_silencer_bone);
-
-    if (SilencerAttachable())
-    {
-        if (IsSilencerAttached())
-        {
-            if (!pWeaponVisual->LL_GetBoneVisible(bone_id))
-                pWeaponVisual->LL_SetBoneVisible(bone_id, TRUE, TRUE);
-        }
-        else
-        {
-            if (pWeaponVisual->LL_GetBoneVisible(bone_id))
-                pWeaponVisual->LL_SetBoneVisible(bone_id, FALSE, TRUE);
         }
     }
 
@@ -1589,17 +1598,20 @@ void CWeapon::UpdateAddonsVisibility()
 
     bone_id = pWeaponVisual->LL_BoneID(m_sWpn_launcher_bone);
 
-    if (GrenadeLauncherAttachable())
+    if (bone_id != BI_NONE)
     {
-        if (IsGrenadeLauncherAttached())
+        if (GrenadeLauncherAttachable())
         {
-            if (!pWeaponVisual->LL_GetBoneVisible(bone_id))
-                pWeaponVisual->LL_SetBoneVisible(bone_id, TRUE, TRUE);
-        }
-        else
-        {
-            if (pWeaponVisual->LL_GetBoneVisible(bone_id))
-                pWeaponVisual->LL_SetBoneVisible(bone_id, FALSE, TRUE);
+            if (IsGrenadeLauncherAttached())
+            {
+                if (!pWeaponVisual->LL_GetBoneVisible(bone_id))
+                    pWeaponVisual->LL_SetBoneVisible(bone_id, TRUE, TRUE);
+            }
+            else
+            {
+                if (pWeaponVisual->LL_GetBoneVisible(bone_id))
+                    pWeaponVisual->LL_SetBoneVisible(bone_id, FALSE, TRUE);
+            }
         }
     }
 
@@ -2095,11 +2107,13 @@ bool CWeapon::ParentIsActor() const
     return smart_cast<const CActor*>(H_Parent()) != nullptr;
 }
 
-const float& CWeapon::hit_probability() const
+float CWeapon::hit_probability() const
 {
-    VERIFY((g_SingleGameDifficulty >= egdNovice) && (g_SingleGameDifficulty <= egdMaster));
-#pragma todo("WTF???")
-    return (m_hit_probability[egdNovice]);
+    static const bool fixed_hit_probability = READ_IF_EXISTS(pSettings, r_bool, "features", "fixed_hit_probability", false);
+    if (fixed_hit_probability)
+        return m_hit_probability[g_SingleGameDifficulty];
+    else
+        return m_hit_probability[egdNovice];
 }
 
 bool CWeapon::Is3dssEnabled() const
